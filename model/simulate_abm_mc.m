@@ -1,4 +1,4 @@
-function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor]=simulate_abm_mc(year,quarter,scenario,scale,seeds)
+function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor]=simulate_abm_mc(year,quarter,scenario,scale,seeds,T)
 
 if nargin < 4
     scale = 1/1000;
@@ -6,8 +6,10 @@ end
 if nargin < 5
     seeds = 500;
 end
+if nargin < 6
+    T = 12;
+end
 
-T=12;
 F=26;
 G=62;
 
@@ -48,7 +50,7 @@ unemployment_rate=zeros(T+1,seeds,F);
 euribor=zeros(T+1,seeds);
 
 parfor s=1:seeds
-    [S_nominal_gdp,S_real_gdp,S_nominal_gva,S_real_gva,S_nominal_household_consumption,S_real_household_consumption,S_nominal_government_consumption,S_real_government_consumption,S_nominal_capitalformation,S_real_capitalformation,S_nominal_fixed_capitalformation,S_real_fixed_capitalformation,S_nominal_fixed_capitalformation_dwellings,S_real_fixed_capitalformation_dwellings,S_nominal_exports,S_real_exports,S_nominal_imports,S_real_imports,S_operating_surplus,S_capital_consumption,S_compensation_employees,S_wages,S_taxes_production,S_nominal_sector_gva,S_real_sector_gva,S_sector_operating_surplus,S_sector_capital_consumption,S_nominal_output,S_real_output,S_nominal_sector_output,S_real_sector_output,S_government_debt,S_government_deficit,S_unemployment_rate,S_euribor]=simulate_abm(year,quarter,s,scenario,scale);
+    [S_nominal_gdp,S_real_gdp,S_nominal_gva,S_real_gva,S_nominal_household_consumption,S_real_household_consumption,S_nominal_government_consumption,S_real_government_consumption,S_nominal_capitalformation,S_real_capitalformation,S_nominal_fixed_capitalformation,S_real_fixed_capitalformation,S_nominal_fixed_capitalformation_dwellings,S_real_fixed_capitalformation_dwellings,S_nominal_exports,S_real_exports,S_nominal_imports,S_real_imports,S_operating_surplus,S_capital_consumption,S_compensation_employees,S_wages,S_taxes_production,S_nominal_sector_gva,S_real_sector_gva,S_sector_operating_surplus,S_sector_capital_consumption,S_nominal_output,S_real_output,S_nominal_sector_output,S_real_sector_output,S_government_debt,S_government_deficit,S_unemployment_rate,S_euribor]=simulate_abm(year,quarter,s,scenario,scale,T);
     nominal_gdp(:,s,:)=S_nominal_gdp;
     real_gdp(:,s,:)=S_real_gdp;
     nominal_gva(:,s,:)=S_nominal_gva;
