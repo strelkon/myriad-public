@@ -1,4 +1,4 @@
-function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m)
+function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints)
 nominal_gdp=zeros(T,F);
 real_gdp=zeros(T,F);
 nominal_gva=zeros(T,F);
@@ -39,6 +39,22 @@ dyn_bilateral_trade_real=zeros(T,F+1,F+1);
 dyn_bilateral_trade_g=zeros(T,F+1,F+1,G);
 dyn_bilateral_trade_real_g=zeros(T,F+1,F+1,G);
 
+capital_stock_dynamics = zeros(T, F, G);
+capital_loss = zeros(T, F);
+sector_capital_loss = zeros(T, F, G);
+firms_damaged = zeros(T, F, G);
+loan_issuance = zeros(T, F);
+credit_constrained_pct = zeros(T, F, G);
+total_firms_demanding = zeros(T, F, G);
+credit_gap = zeros(T, F);
+credit_gap_to_gdp = zeros(T, F);
+
+% The total number of firms
+I = length(F_i);
+
+% Save pre-shock capital for reconstruction reference
+K_i_ = K_i;
+
 AC_e_i=(1+tau_SIF(F_i)).*w_bar_i./alpha_bar_i+delta_i./kappa_i+1./beta_i;
 mu_i=1./AC_e_i-1;
 P_bar_HH_DM=ones(F,G);
@@ -77,6 +93,12 @@ for t=1:T
     end
     
     [epsilon_]=epsilon(cov([u_gamma,u_pi]));
+
+    if any(isnan(epsilon_(:)))
+        warning('Breaking loop due to non-positive definite covariance matrix');
+        break;
+    end
+
     % epsilon_Y=0;
     epsilon_gamma=epsilon_(1:F);
     % epsilon_gamma=0;
@@ -91,7 +113,37 @@ for t=1:T
     r=r_bar+mu;
     
     Q_s_i=Q_d_i.*(1+gamma_X_i(t,:)).*(1+gamma_e_f(F_i));
-    
+
+    % Capital destruction shock
+    if ~strcmp(scenario, 'S0') && sum(gamma_K_gr(:)) < 0
+        sector_country_weights = abs(squeeze(gamma_K_gr(t, :, :)));
+    else
+        sector_country_weights = zeros(F, G);
+    end
+
+    X_i = zeros(1, I);
+    for f = 1:F
+        for g = 1:G
+            inds = find(F_i == f & G_i == g);
+            if isempty(inds), continue; end
+            shuffled_inds = inds(randperm(numel(inds)));
+            totalK = sum(K_i(inds));
+            industry_loss = P_bar_CF(f) * sector_country_weights(f, g) * totalK;
+            potential_losses = K_i(shuffled_inds) * P_bar_CF(f);
+            cumsum_losses = cumsum(potential_losses);
+            break_idx = find(cumsum_losses >= industry_loss, 1);
+            if isempty(break_idx)
+                X_i(shuffled_inds) = potential_losses;
+            else
+                if break_idx > 1
+                    X_i(shuffled_inds(1:break_idx-1)) = potential_losses(1:break_idx-1);
+                end
+                X_i(shuffled_inds(break_idx)) = industry_loss - sum(potential_losses(1:break_idx-1));
+            end
+        end
+    end
+    K_i = K_i - X_i;
+
     % pi_c_i=(1+tau_SIF(F_i)).*w_bar_i./alpha_bar_i.*(P_bar_HH./P_i-1)+1./beta_i.*(sum(a_sg(:,G_i).*P_bar_g)./P_i-1)+delta_i./kappa_i.*(P_bar_CF./P_i-1);
     I=length(G_i);
     % pi_c_i=zeros(1,I);
@@ -104,21 +156,34 @@ for t=1:T
     
     % P_i=P_i.*(1+pi_c_i).*(1+pi_e_f(F_i));
     P_i=(1+mu_i).*AC_e_i;
-    
-    I_d_i=delta_i./kappa_i.*min(Q_s_i,K_i.*kappa_i);
-    
+
     DM_d_i=min(Q_s_i,K_i.*kappa_i)./beta_i;
     
     N_d_i=max(1,round(min(Q_s_i,K_i.*kappa_i)./alpha_bar_i));
     
     Pi_e_i=Pi_i.*(1+pi_e_f(F_i)).*(1+gamma_e_f(F_i));
-    DD_e_i=Pi_e_i-theta*L_i-tau_FIRM(F_i).*max(0,Pi_e_i)-(theta_DIV(F_i).*(1-tau_FIRM(F_i))).*max(0,Pi_e_i);
+    DD_e_i=Pi_e_i-theta*L_i-tau_FIRM(F_i).*max(0,Pi_e_i)-(theta_DIV(F_i).*(1-tau_FIRM(F_i))).*max(0,Pi_e_i)+(K_i_-K_i).*P_bar_CF(F_i).*(1+pi_e_f(F_i));
     DL_d_i=max(0,-DD_e_i-D_i);
-    
+
     K_e_i=P_bar_CF(F_i).*(1+pi_e_f(F_i)).*K_i;
     L_e_i=(1-theta)*L_i;
     DL_i=search_and_matching_credit(DL_d_i,K_e_i,L_e_i,E_k,zeta,zeta_LTV);
-    
+
+    if ~strcmp(scenario, 'S0') && (credit_constraints > 0)
+        if credit_constraints == 2
+            DL_i(:) = 0;
+        else
+            for i = 1:I
+                if X_i(i) > 0
+                    DL_i(i) = 0;
+                end
+            end
+        end
+        I_d_i = max(0, delta_i./kappa_i.*min(Q_s_i,K_i.*kappa_i) + max(0, (K_i_-K_i) - max(0, (DL_d_i-DL_i))./(P_bar_CF(F_i).*(1+pi_e_f(F_i)))));
+    else
+        I_d_i = max(0, delta_i./kappa_i.*min(Q_s_i,K_i.*kappa_i) + (K_i_-K_i));
+    end
+
     V_i=N_d_i-N_i;
     [N_i,O_h]=search_and_matching_labor(N_i,V_i,O_h);
     
@@ -341,8 +406,26 @@ for t=1:T
         government_debt(t,f)=L_G(f);
         government_deficit(t,f)=Pi_G(f);
         unemployment_rate(t,f)=sum(O_h==0&F_h(1:H_W)==f)/sum(F_h(1:H_W)==f);
+        loan_issuance(t,f) = sum(DL_i(F_i==f));
     end
-    
+
+    % Capital dynamics tracking
+    capital_stock_dynamics(t, :, :) = accumarray([F_i(:), G_i(:)], K_i(:), [F, G]);
+    capital_loss(t, :) = accumarray(F_i(:), X_i(:), [F, 1]) ./ max(1e-10, accumarray(F_i(:), K_i(:)+X_i(:), [F, 1]));
+    sector_capital_loss(t, :, :) = accumarray([F_i(:), G_i(:)], X_i(:), [F, G]) ./ max(1e-10, accumarray([F_i(:), G_i(:)], K_i(:)+X_i(:), [F, G]));
+    damaged_firms_mask = (X_i ./ max(1e-10, K_i+X_i)) > 0.15;
+    firms_damaged(t, :, :) = accumarray([F_i(:), G_i(:)], damaged_firms_mask(:), [F, G]);
+
+    % Credit constraint tracking
+    credit_gap(t, :) = accumarray(F_i(:), max(0, DL_d_i(:) - DL_i(:)), [F, 1])';
+    for f = 1:F
+        credit_gap_to_gdp(t, f) = credit_gap(t, f) / max(1e-10, nominal_gdp(t, f));
+    end
+    demanding_mask = DL_d_i > 0;
+    constrained_mask = demanding_mask & (DL_i < DL_d_i);
+    total_firms_demanding(t, :, :) = accumarray([F_i(:), G_i(:)], demanding_mask(:), [F, G]);
+    credit_constrained_pct(t, :, :) = accumarray([F_i(:), G_i(:)], constrained_mask(:), [F, G]) ./ max(1, squeeze(total_firms_demanding(t, :, :)));
+
     euribor(t)=r_bar;
     
     insolvent=find(D_i<0 & E_i<0);
