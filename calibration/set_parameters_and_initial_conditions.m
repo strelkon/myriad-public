@@ -1,5 +1,10 @@
-% Clear workspace
-clear;
+function set_parameters_and_initial_conditions(scale)
+
+if nargin < 1
+    scale = 1/1000;
+end
+
+scale_str = ['_', num2str(round(1/scale))];
 
 % Load calibration data
 load('../data/calibration/AT.mat','calibration_data');
@@ -87,7 +92,6 @@ for calibration_date=start_calibration_date:calquarters:end_calibration_date
     
     % r_bar=max(0,(data.euribor(T_calibration_exo)+1).^(1/4)-1);
     
-    scale=1/1000;
     omega=0.85;
     
     % Set interest to zero for debugging
@@ -225,7 +229,7 @@ for calibration_date=start_calibration_date:calquarters:end_calibration_date
     
     C=cov([epsilon_gamma_G,epsilon_pi_G,epsilon_gamma_E,epsilon_pi_E,epsilon_gamma_I,epsilon_pi_I]);
     
-    save(['../model/parameters/',num2str(year(calibration_date)),'Q',num2str(quarter(calibration_date)),'.mat'],'T','T_max','S','G','H_act','H_inact','J','L','tau_INC','tau_FIRM','tau_VAT','tau_SIF','tau_SIW','tau_EXPORT','tau_CF','tau_G','theta_UB','psi','psi_H','theta_DIV','theta','mu','r_G','zeta','zeta_LTV','zeta_b','I_sr','alpha_sr','beta_sr','kappa_sr','delta_sr','w_sr','tau_Y_sr','tau_K_sr','b_CF_g','b_CFH_g','b_HH_g','c_G_g','c_E_g','c_I_g','a_sg','T_prime','pi_star','alpha_gamma_G','beta_gamma_G','alpha_gamma_E','beta_gamma_E','alpha_gamma_I','beta_gamma_I','alpha_pi_G','beta_pi_G','alpha_pi_E','beta_pi_E','alpha_pi_I','beta_pi_I','C','F','s_a_ffsg','s_CF_ffg','s_CFH_ffg','s_HH_ffg','s_G_ffg','s_E_fg');
+    save(['../model/parameters/',num2str(year(calibration_date)),'Q',num2str(quarter(calibration_date)),scale_str,'.mat'],'T','T_max','S','G','H_act','H_inact','J','L','tau_INC','tau_FIRM','tau_VAT','tau_SIF','tau_SIW','tau_EXPORT','tau_CF','tau_G','theta_UB','psi','psi_H','theta_DIV','theta','mu','r_G','zeta','zeta_LTV','zeta_b','I_sr','alpha_sr','beta_sr','kappa_sr','delta_sr','w_sr','tau_Y_sr','tau_K_sr','b_CF_g','b_CFH_g','b_HH_g','c_G_g','c_E_g','c_I_g','a_sg','T_prime','pi_star','alpha_gamma_G','beta_gamma_G','alpha_gamma_E','beta_gamma_E','alpha_gamma_I','beta_gamma_I','alpha_pi_G','beta_pi_G','alpha_pi_E','beta_pi_E','alpha_pi_I','beta_pi_I','C','F','s_a_ffsg','s_CF_ffg','s_CFH_ffg','s_HH_ffg','s_G_ffg','s_E_fg');
     
     % Sector initial conditions
     N_sr=employees;
@@ -283,5 +287,5 @@ for calibration_date=start_calibration_date:calquarters:end_calibration_date
         P_G(:,g)=exp(cumsum(pi_G(:,g)))/exp(sum(pi_G(1:T_prime,g)));
     end
     
-    save(['../model/initial_conditions/',num2str(year(calibration_date)),'Q',num2str(quarter(calibration_date)),'.mat'],'D_I','L_I','omega','w_UB','sb_inact','sb_other','D_H','K_H','L_G','E_k','E_CB','D_RoW','N_sr','Y','gamma','pi','P','r_bar','gamma_G','C_G','pi_G','P_G','gamma_E','C_E','pi_E','P_E','gamma_I','Y_I','pi_I','P_I','Y_f','gamma_f','pi_f','P_f');
+    save(['../model/initial_conditions/',num2str(year(calibration_date)),'Q',num2str(quarter(calibration_date)),scale_str,'.mat'],'D_I','L_I','omega','w_UB','sb_inact','sb_other','D_H','K_H','L_G','E_k','E_CB','D_RoW','N_sr','Y','gamma','pi','P','r_bar','gamma_G','C_G','pi_G','P_G','gamma_E','C_E','pi_E','P_E','gamma_I','Y_I','pi_I','P_I','Y_f','gamma_f','pi_f','P_f');
 end
