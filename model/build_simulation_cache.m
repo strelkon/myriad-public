@@ -166,6 +166,7 @@ cache.gamma_X_I = gamma_X_I;
 cache.prod_cache = struct();
 cache.prod_cache.A = prod_A;
 cache.prod_cache.C = prod_C;
+cache.prod_cache.C_minus_A = prod_C - prod_A;
 cache.prod_cache.idx_fg_flat = idx_fg_flat;
 cache.prod_cache.idx_g_m = idx_g_m;
 cache.prod_cache.G = G;

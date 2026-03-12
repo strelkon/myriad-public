@@ -17,7 +17,7 @@ for g=1:prod_cache.G
     m(g)=sum(Y_m(inds));
 end
 
-Y_fg=computeFeasibleOutput(Y_fg_',prod_cache.A,m,prod_cache.C)';
+Y_fg=computeFeasibleOutput(Y_fg_',prod_cache.A,m,prod_cache.C,prod_cache.C_minus_A)';
 
 HC_fg=Y_fg./Y_fg_;
 
@@ -32,7 +32,7 @@ else
 end
 end
 
-function x = computeFeasibleOutput(x_plan, A, m, C)
+function x = computeFeasibleOutput(x_plan, A, m, C, C_minus_A)
 % computeFeasibleOutput Computes a feasible industry output vector given:
 %
 %   - Planned industry outputs x_plan (n_i x 1),
@@ -58,6 +58,11 @@ function x = computeFeasibleOutput(x_plan, A, m, C)
 
 % Number of industries and products
 n_i = length(x_plan);   % number of industries
+
+if all(C_minus_A * x_plan + m >= 0)
+    x = x_plan;
+    return;
+end
 
 % Objective: maximize sum(x) is equivalent to minimizing -sum(x)
 persistent f_template Aineq1_template lb_template options_template cached_n_i
