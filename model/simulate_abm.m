@@ -1,111 +1,87 @@
-function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=simulate_abm(year,quarter,seed,scenario,scale,T,credit_constraints)
+function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=simulate_abm(year,quarter,seed,scenario,scale,T,credit_constraints,cache)
 rng(seed);
-G=62;
-coder.varsize('a_sg','G_i');
-
-scale_str=['_',num2str(round(1/scale))];
-parameters=coder.load(['./parameters/',num2str(year),'Q',num2str(quarter),scale_str,'.mat'],'T','T_max','S','G','H_act','H_inact','J','L','tau_INC','tau_FIRM','tau_VAT','tau_SIF','tau_SIW','tau_EXPORT','tau_CF','tau_G','theta_UB','psi','psi_H','theta_DIV','theta','mu','r_G','zeta','zeta_LTV','zeta_b','I_sr','alpha_sr','beta_sr','kappa_sr','delta_sr','w_sr','tau_Y_sr','tau_K_sr','b_CF_g','b_CFH_g','b_HH_g','c_G_g','c_E_g','c_I_g','a_sg','T_prime','pi_star','alpha_gamma_G','beta_gamma_G','alpha_gamma_E','beta_gamma_E','alpha_gamma_I','beta_gamma_I','alpha_pi_G','beta_pi_G','alpha_pi_E','beta_pi_E','alpha_pi_I','beta_pi_I','C','F','s_a_ffsg','s_CF_ffg','s_CFH_ffg','s_HH_ffg','s_G_ffg','s_E_fg');
-initial_conditions=coder.load(['./initial_conditions/',num2str(year),'Q',num2str(quarter),scale_str,'.mat'],'D_H','D_I','D_RoW','E_CB','E_k','K_H','L_G','L_I','omega','sb_inact','sb_other','w_UB','N_sr','Y','gamma','pi','P','r_bar','gamma_G','C_G','pi_G','P_G','gamma_E','C_E','pi_E','P_E','gamma_I','Y_I','pi_I','P_I','Y_f','gamma_f','pi_f','P_f');
-
-% Conditional shock loading
-if ~strcmp(scenario, 'S0')
-    shock = coder.load(sprintf('./shock/%s.mat', scenario));
-else
-    shock = struct();
-end  
-
-F=parameters.F;
-% G=parameters.G;
-H_act=parameters.H_act;
-H_inact=parameters.H_inact;
-J=parameters.J;
-L=parameters.L;
-tau_INC=parameters.tau_INC;
-tau_FIRM=parameters.tau_FIRM;
-tau_VAT=parameters.tau_VAT;
-tau_SIF=parameters.tau_SIF;
-tau_SIW=parameters.tau_SIW;
-tau_EXPORT=parameters.tau_EXPORT;
-tau_CF=parameters.tau_CF;
-tau_G=parameters.tau_G;
-theta_UB=parameters.theta_UB;
-psi=parameters.psi;
-psi_H=parameters.psi_H;
-theta_DIV=parameters.theta_DIV;
-theta=parameters.theta;
-mu=parameters.mu;
-r_G=parameters.r_G;
-zeta=parameters.zeta;
-zeta_LTV=parameters.zeta_LTV;
-zeta_b=parameters.zeta_b;
-I_sr=parameters.I_sr;
-alpha_sr=parameters.alpha_sr;
-beta_sr=parameters.beta_sr;
-kappa_sr=parameters.kappa_sr;
-delta_sr=parameters.delta_sr;
-w_sr=parameters.w_sr;
-tau_Y_sr=parameters.tau_Y_sr;
-tau_K_sr=parameters.tau_K_sr;
-b_CF_g=parameters.b_CF_g;
-b_CFH_g=parameters.b_CFH_g;
-b_HH_g=parameters.b_HH_g;
-c_G_g=parameters.c_G_g;
-c_E_g=parameters.c_E_g;
-c_I_g=parameters.c_I_g;
-a_sg=parameters.a_sg;
-% T=parameters.T;
-T_prime=parameters.T_prime;
-T_max=parameters.T_max;
-alpha_gamma_G=parameters.alpha_gamma_G;
-beta_gamma_G=parameters.beta_gamma_G;
-alpha_gamma_E=parameters.alpha_gamma_E;
-beta_gamma_E=parameters.beta_gamma_E;
-alpha_gamma_I=parameters.alpha_gamma_I;
-beta_gamma_I=parameters.beta_gamma_I;
-alpha_pi_G=parameters.alpha_pi_G;
-beta_pi_G=parameters.beta_pi_G;
-alpha_pi_E=parameters.alpha_pi_E;
-beta_pi_E=parameters.beta_pi_E;
-alpha_pi_I=parameters.alpha_pi_I;
-beta_pi_I=parameters.beta_pi_I;
-C=parameters.C;
-s_a_ffsg=parameters.s_a_ffsg;
-s_CF_ffg=parameters.s_CF_ffg;
-s_CFH_ffg=parameters.s_CFH_ffg;
-s_HH_ffg=parameters.s_HH_ffg;
-s_G_ffg=parameters.s_G_ffg;
-s_E_fg=parameters.s_E_fg;
-
-I=sum(sum(I_sr));
-G_i=zeros(1,I);
-F_i=zeros(1,I);
-for g=1:G
-    for f=1:F
-        i=sum(sum(I_sr(1:g-1,:)))+sum(sum(I_sr(g,1:f-1)));
-        j=I_sr(g,f);
-        G_i(i+1:i+j)=g;
-        F_i(i+1:i+j)=f;
-    end
+if nargin < 8 || isempty(cache)
+    cache = build_simulation_cache(year, quarter, scenario, scale, T);
 end
 
-alpha_bar_i=zeros(1,I);
-beta_i=zeros(1,I);
-kappa_i=zeros(1,I);
-w_bar_i=zeros(1,I);
-delta_i=zeros(1,I);
-tau_Y_i=zeros(1,I);
-tau_K_i=zeros(1,I);
-for i=1:I
-    g=G_i(i);
-    f=F_i(i);
-    alpha_bar_i(i)=alpha_sr(g,f);
-    beta_i(i)=beta_sr(g,f);
-    kappa_i(i)=kappa_sr(g,f);
-    delta_i(i)=delta_sr(g,f);
-    w_bar_i(i)=w_sr(g,f);
-    tau_Y_i(i)=tau_Y_sr(g,f);
-    tau_K_i(i)=tau_K_sr(g,f);
-end
+parameters = cache.parameters;
+initial_conditions = cache.initial_conditions;
+G = cache.G;
+F = cache.F;
+H_act = parameters.H_act;
+H_inact = parameters.H_inact;
+J = parameters.J;
+L = parameters.L;
+tau_INC = parameters.tau_INC;
+tau_FIRM = parameters.tau_FIRM;
+tau_VAT = parameters.tau_VAT;
+tau_SIF = parameters.tau_SIF;
+tau_SIW = parameters.tau_SIW;
+tau_EXPORT = parameters.tau_EXPORT;
+tau_CF = parameters.tau_CF;
+tau_G = parameters.tau_G;
+theta_UB = parameters.theta_UB;
+psi = parameters.psi;
+psi_H = parameters.psi_H;
+theta_DIV = parameters.theta_DIV;
+theta = parameters.theta;
+mu = parameters.mu;
+r_G = parameters.r_G;
+zeta = parameters.zeta;
+zeta_LTV = parameters.zeta_LTV;
+zeta_b = parameters.zeta_b;
+I_sr = parameters.I_sr;
+alpha_sr = parameters.alpha_sr;
+beta_sr = parameters.beta_sr;
+kappa_sr = parameters.kappa_sr;
+delta_sr = parameters.delta_sr;
+w_sr = parameters.w_sr;
+tau_Y_sr = parameters.tau_Y_sr;
+tau_K_sr = parameters.tau_K_sr;
+b_CF_g = parameters.b_CF_g;
+b_CFH_g = parameters.b_CFH_g;
+b_HH_g = parameters.b_HH_g;
+c_G_g = parameters.c_G_g;
+c_E_g = parameters.c_E_g;
+c_I_g = parameters.c_I_g;
+a_sg = parameters.a_sg;
+T_prime = parameters.T_prime;
+T_max = parameters.T_max;
+alpha_gamma_G = parameters.alpha_gamma_G;
+beta_gamma_G = parameters.beta_gamma_G;
+alpha_gamma_E = parameters.alpha_gamma_E;
+beta_gamma_E = parameters.beta_gamma_E;
+alpha_gamma_I = parameters.alpha_gamma_I;
+beta_gamma_I = parameters.beta_gamma_I;
+alpha_pi_G = parameters.alpha_pi_G;
+beta_pi_G = parameters.beta_pi_G;
+alpha_pi_E = parameters.alpha_pi_E;
+beta_pi_E = parameters.beta_pi_E;
+alpha_pi_I = parameters.alpha_pi_I;
+beta_pi_I = parameters.beta_pi_I;
+C = parameters.C;
+s_a_ffsg = parameters.s_a_ffsg;
+s_CF_ffg = parameters.s_CF_ffg;
+s_CFH_ffg = parameters.s_CFH_ffg;
+s_HH_ffg = parameters.s_HH_ffg;
+s_G_ffg = parameters.s_G_ffg;
+s_E_fg = parameters.s_E_fg;
+
+I = sum(sum(I_sr));
+G_i = cache.G_i;
+F_i = cache.F_i;
+idx_fg_i = cache.idx_fg_i;
+idx_f_i = cache.idx_f_i;
+idx_g_m = cache.idx_g_m;
+FG_linear = cache.FG_linear;
+prod_cache = cache.prod_cache;
+alpha_bar_i = cache.alpha_bar_i;
+beta_i = cache.beta_i;
+kappa_i = cache.kappa_i;
+w_bar_i = cache.w_bar_i;
+delta_i = cache.delta_i;
+tau_Y_i = cache.tau_Y_i;
+tau_K_i = cache.tau_K_i;
 
 Y=initial_conditions.Y;
 gamma=initial_conditions.gamma;
@@ -153,7 +129,8 @@ P_bar_CF=ones(1,F);
 N_i=zeros(1,I);
 for g=1:G
     for f=1:F
-        N_i(G_i==g & F_i==f)=randpl(I_sr(g,f),2,N_sr(g,f));
+        inds = idx_fg_i{f,g};
+        N_i(inds)=randpl(I_sr(g,f),2,N_sr(g,f));
     end
 end
 
@@ -168,8 +145,9 @@ L_i=zeros(size(K_i));
 pi_bar_i=1-(1+tau_SIF(F_i)).*w_bar_i./alpha_bar_i-delta_i./kappa_i-1./beta_i-tau_K_i-tau_Y_i;
 D_i=zeros(size(Y_i));
 for f=1:F
-    L_i(F_i==f)=L_I(f).*K_i(F_i==f)/sum(K_i(F_i==f));
-    D_i(F_i==f)=D_I(f).*max(0,pi_bar_i(F_i==f).*Y_i(F_i==f))/sum(max(0,pi_bar_i(F_i==f).*Y_i(F_i==f)));
+    inds = idx_f_i{f};
+    L_i(inds)=L_I(f).*K_i(inds)/sum(K_i(inds));
+    D_i(inds)=D_I(f).*max(0,pi_bar_i(inds).*Y_i(inds))/sum(max(0,pi_bar_i(inds).*Y_i(inds)));
 end
 
 r=r_bar+mu;
@@ -245,21 +223,16 @@ D_k=sum(D_i)+sum(D_h)+E_k-sum(L_i);
 %     Y_m(G_m==g)=c_I_g(g)*Y_I(T_prime)/sum(G_m==g);
 % end
 
-I_ms=max(1,round(nansum(I_sr,2)./nansum(alpha_sr.*N_sr,2).*c_I_g*Y_I(T_prime)));
-N_ms=max(1,round(nansum(N_sr,2)./nansum(alpha_sr.*N_sr,2).*c_I_g*Y_I(T_prime)));
-
-M=sum(I_ms);
-G_m=zeros(1,M);
-for g=1:G
-    i=sum(I_ms(1:g-1));
-    j=I_ms(g);
-    G_m(i+1:i+j)=g;
-end
+I_ms = cache.I_ms;
+N_ms = cache.N_ms;
+G_m = cache.G_m;
+M = sum(I_ms);
 N_m=zeros(1,M);
 Y_m=zeros(1,M);
 for g=1:G
-    N_m(G_m==g)=randpl(I_ms(g),2,N_ms(g));
-    Y_m(G_m==g)=N_m(G_m==g)*c_I_g(g)*Y_I(T_prime)/sum(N_m(G_m==g));
+    inds = idx_g_m{g};
+    N_m(inds)=randpl(I_ms(g),2,N_ms(g));
+    Y_m(inds)=N_m(inds)*c_I_g(g)*Y_I(T_prime)/sum(N_m(inds));
 end
 P_m=ones(size(Y_m));
 
@@ -327,24 +300,26 @@ credit_gap=zeros(T+1,F);
 credit_gap_to_gdp=zeros(T+1,F);
 
 for f=1:F
-    nominal_gdp(1,f)=sum(Y_i(F_i==f).*(1-1./beta_i(F_i==f)))+sum(Y_h(F_h==f).*psi(f)./(1./tau_VAT(f)+1))+sum(Y_h(F_h==f).*psi_H(f)./(1./tau_CF(f)+1))+tau_G(f)*C_G(T_prime,f);% +tau_EXPORT(f)*C_E(T_prime,f);
+    inds_f = idx_f_i{f};
+    nominal_gdp(1,f)=sum(Y_i(inds_f).*(1-1./beta_i(inds_f)))+sum(Y_h(F_h==f).*psi(f)./(1./tau_VAT(f)+1))+sum(Y_h(F_h==f).*psi_H(f)./(1./tau_CF(f)+1))+tau_G(f)*C_G(T_prime,f);% +tau_EXPORT(f)*C_E(T_prime,f);
     real_gdp(1,f)=nominal_gdp(1,f);
-    nominal_gva(1,f)=sum(Y_i(F_i==f).*((1-tau_Y_i(F_i==f))-1./beta_i(F_i==f)));
+    nominal_gva(1,f)=sum(Y_i(inds_f).*((1-tau_Y_i(inds_f))-1./beta_i(inds_f)));
     real_gva(1,f)=nominal_gva(1,f);
     nominal_household_consumption(1,f)=sum(Y_h(F_h==f).*psi(f));
     real_household_consumption(1,f)=nominal_household_consumption(1,f);
     nominal_government_consumption(1,f)=(1+tau_G(f))*C_G(T_prime,f);
     real_government_consumption(1,f)=nominal_government_consumption(1,f);
-    nominal_capitalformation(1,f)=sum(Y_i(F_i==f).*delta_i(F_i==f)./kappa_i(F_i==f))+sum(Y_h(F_h==f).*psi_H(f));
+    nominal_capitalformation(1,f)=sum(Y_i(inds_f).*delta_i(inds_f)./kappa_i(inds_f))+sum(Y_h(F_h==f).*psi_H(f));
     real_capitalformation(1,f)=nominal_capitalformation(1,f);
     nominal_fixed_capitalformation(1,f)=nominal_capitalformation(1,f);
     real_fixed_capitalformation(1,f)=nominal_capitalformation(1,f);
     nominal_fixed_capitalformation_dwellings(1,f)=sum(Y_h(F_h==f).*psi_H(f));
     real_fixed_capitalformation_dwellings(1,f)=nominal_fixed_capitalformation_dwellings(1,f);
-    nominal_intermediate_consumption(1,f)=sum(Y_i(F_i==f)./beta_i(F_i==f));
+    nominal_intermediate_consumption(1,f)=sum(Y_i(inds_f)./beta_i(inds_f));
     
     for g=1:G
-        imported_nominal_sector_intermediate_consumption(1,f,g)=sum(sum(squeeze(s_a_ffsg([1:f-1,f+1:end],f,:,g)).*a_sg(:,g,f)'))*sum(Y_i(F_i==f&G_i==g)./beta_i(F_i==f&G_i==g));
+        inds_fg = idx_fg_i{f,g};
+        imported_nominal_sector_intermediate_consumption(1,f,g)=sum(sum(squeeze(s_a_ffsg([1:f-1,f+1:end],f,:,g)).*a_sg(:,g,f)'))*sum(Y_i(inds_fg)./beta_i(inds_fg));
     end
     
     % nominal_imports(1,f)=sum(imported_nominal_sector_intermediate_consumption(1,f,:))+sum(sum(squeeze(s_HH_ffg([1:f-1,f+1:end],f,:)).*b_HH_g(:,f)'))*nominal_household_consumption(1,f)/(1+tau_VAT(f))+sum(sum(squeeze(s_G_ffg([1:f-1,f+1:end],f,:)).*c_G_g(:,f)'))*nominal_government_consumption(1,f)/(1+tau_G(f))+sum(sum(squeeze(s_CF_ffg([1:f-1,f+1:end],f,:)).*b_CF_g(:,f)'))*(nominal_fixed_capitalformation(1,f)-nominal_fixed_capitalformation_dwellings(1,f))+sum(sum(squeeze(s_CFH_ffg([1:f-1,f+1:end],f,:)).*b_CFH_g(:,f)'))*nominal_fixed_capitalformation_dwellings(1,f)/(1+tau_CF(f));
@@ -352,21 +327,22 @@ for f=1:F
     % nominal_exports(1,f)=(1+tau_EXPORT(f))*C_E(T_prime,f);
     % nominal_exports(1,f)=nominal_gdp(1,f)+nominal_imports(1,f)-nominal_household_consumption(1,f)-nominal_government_consumption(1,f)-nominal_capitalformation(1,f);
     % real_exports(1,f)=nominal_exports(1,f);
-    operating_surplus(1,f)=sum(Y_i(F_i==f).*(1-((1+tau_SIF(f)).*w_bar_i(F_i==f)./alpha_bar_i(F_i==f)+1./beta_i(F_i==f)))-tau_K_i(F_i==f).*Y_i(F_i==f)-tau_Y_i(F_i==f).*Y_i(F_i==f));
-    capital_consumption(1,f)=sum(Y_i(F_i==f).*delta_i(F_i==f)./kappa_i(F_i==f));
-    compensation_employees(1,f)=sum((1+tau_SIF(f)).*w_bar_i(F_i==f).*N_i(F_i==f));
-    wages(1,f)=sum(w_bar_i(F_i==f).*N_i(F_i==f));
-    taxes_production(1,f)=sum(tau_K_i(F_i==f).*Y_i(F_i==f));
+    operating_surplus(1,f)=sum(Y_i(inds_f).*(1-((1+tau_SIF(f)).*w_bar_i(inds_f)./alpha_bar_i(inds_f)+1./beta_i(inds_f)))-tau_K_i(inds_f).*Y_i(inds_f)-tau_Y_i(inds_f).*Y_i(inds_f));
+    capital_consumption(1,f)=sum(Y_i(inds_f).*delta_i(inds_f)./kappa_i(inds_f));
+    compensation_employees(1,f)=sum((1+tau_SIF(f)).*w_bar_i(inds_f).*N_i(inds_f));
+    wages(1,f)=sum(w_bar_i(inds_f).*N_i(inds_f));
+    taxes_production(1,f)=sum(tau_K_i(inds_f).*Y_i(inds_f));
     
     for g=1:G
-        nominal_sector_gva(1,f,g)=sum(Y_i(F_i==f&G_i==g).*((1-tau_Y_i(F_i==f&G_i==g))-1./beta_i(F_i==f&G_i==g)));
-        sector_operating_surplus(1,f,g)=sum(Y_i(F_i==f&G_i==g).*(1-((1+tau_SIF(F_i(F_i==f&G_i==g))).*w_bar_i(F_i==f&G_i==g)./alpha_bar_i(F_i==f&G_i==g)+1./beta_i(F_i==f&G_i==g)))-tau_K_i(F_i==f&G_i==g).*Y_i(F_i==f&G_i==g)-tau_Y_i(F_i==f&G_i==g).*Y_i(F_i==f&G_i==g));
-        sector_capital_consumption(1,f,g)=sum(Y_i(F_i==f&G_i==g).*delta_i(F_i==f&G_i==g)./kappa_i(F_i==f&G_i==g));
-        nominal_sector_output(1,f,g)=sum(Y_i(F_i==f&G_i==g));
+        inds_fg = idx_fg_i{f,g};
+        nominal_sector_gva(1,f,g)=sum(Y_i(inds_fg).*((1-tau_Y_i(inds_fg))-1./beta_i(inds_fg)));
+        sector_operating_surplus(1,f,g)=sum(Y_i(inds_fg).*(1-((1+tau_SIF(F_i(inds_fg))).*w_bar_i(inds_fg)./alpha_bar_i(inds_fg)+1./beta_i(inds_fg)))-tau_K_i(inds_fg).*Y_i(inds_fg)-tau_Y_i(inds_fg).*Y_i(inds_fg));
+        sector_capital_consumption(1,f,g)=sum(Y_i(inds_fg).*delta_i(inds_fg)./kappa_i(inds_fg));
+        nominal_sector_output(1,f,g)=sum(Y_i(inds_fg));
     end
     
     real_sector_gva(1,f,:)=nominal_sector_gva(1,f,:);
-    nominal_output(1,f)=sum(Y_i(F_i==f));
+    nominal_output(1,f)=sum(Y_i(inds_f));
     real_output(1,f)=nominal_output(1,f);
     real_sector_output(1,f,:)=nominal_sector_output(1,f,:);
     
@@ -382,22 +358,9 @@ real_exports(1,:)=nominal_exports(1,:);
 
 euribor(1)=r_bar;
 
-gamma_K_gr = zeros(T,F,G);
-gamma_X_i = zeros(T,I);
-gamma_X_I = zeros(T,G);
-if ~strcmp(scenario, 'S0')
-    if isfield(shock, 'gamma_K_gr')
-        gamma_K_gr = shock.gamma_K_gr;
-    end
-    if isfield(shock, 'gamma_X_gr')
-        for i=1:I
-            gamma_X_i(:,i) = shock.gamma_X_gr(:,F_i(i),G_i(i));
-        end
-    end
-    if isfield(shock, 'gamma_X_I')
-        gamma_X_I = shock.gamma_X_I;
-    end
-end
+gamma_K_gr = cache.gamma_K_gr;
+gamma_X_i = cache.gamma_X_i;
+gamma_X_I = cache.gamma_X_I;
 
 for t=1:T
     [epsilon_]=epsilon(C);
@@ -433,6 +396,6 @@ for t=1:T
     P_I(T_prime+t)=P_I(T_prime+t-1)*exp(pi_I(T_prime+t));
 end
 
-[nominal_gdp(2:T+1,:),real_gdp(2:T+1,:),nominal_gva(2:T+1,:),real_gva(2:T+1,:),nominal_household_consumption(2:T+1,:),real_household_consumption(2:T+1,:),nominal_government_consumption(2:T+1,:),real_government_consumption(2:T+1,:),nominal_capitalformation(2:T+1,:),real_capitalformation(2:T+1,:),nominal_fixed_capitalformation(2:T+1,:),real_fixed_capitalformation(2:T+1,:),nominal_fixed_capitalformation_dwellings(2:T+1,:),real_fixed_capitalformation_dwellings(2:T+1,:),nominal_exports(2:T+1,:),real_exports(2:T+1,:),nominal_imports(2:T+1,:),real_imports(2:T+1,:),operating_surplus(2:T+1,:),capital_consumption(2:T+1,:),compensation_employees(2:T+1,:),wages(2:T+1,:),taxes_production(2:T+1,:),nominal_sector_gva(2:T+1,:,:),real_sector_gva(2:T+1,:,:),sector_operating_surplus(2:T+1,:,:),sector_capital_consumption(2:T+1,:,:),nominal_output(2:T+1,:),real_output(2:T+1,:),nominal_sector_output(2:T+1,:,:),real_sector_output(2:T+1,:,:),government_debt(2:T+1,:),government_deficit(2:T+1,:),unemployment_rate(2:T+1,:),euribor(2:T+1),E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g(2:T+1,:,:,:),dyn_bilateral_trade_real_g(2:T+1,:,:,:),capital_stock_dynamics(2:T+1,:,:),capital_loss(2:T+1,:),sector_capital_loss(2:T+1,:,:),firms_damaged(2:T+1,:,:),loan_issuance(2:T+1,:),credit_constrained_pct(2:T+1,:,:),total_firms_demanding(2:T+1,:,:),credit_gap(2:T+1,:),credit_gap_to_gdp(2:T+1,:)]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints);
+[nominal_gdp(2:T+1,:),real_gdp(2:T+1,:),nominal_gva(2:T+1,:),real_gva(2:T+1,:),nominal_household_consumption(2:T+1,:),real_household_consumption(2:T+1,:),nominal_government_consumption(2:T+1,:),real_government_consumption(2:T+1,:),nominal_capitalformation(2:T+1,:),real_capitalformation(2:T+1,:),nominal_fixed_capitalformation(2:T+1,:),real_fixed_capitalformation(2:T+1,:),nominal_fixed_capitalformation_dwellings(2:T+1,:),real_fixed_capitalformation_dwellings(2:T+1,:),nominal_exports(2:T+1,:),real_exports(2:T+1,:),nominal_imports(2:T+1,:),real_imports(2:T+1,:),operating_surplus(2:T+1,:),capital_consumption(2:T+1,:),compensation_employees(2:T+1,:),wages(2:T+1,:),taxes_production(2:T+1,:),nominal_sector_gva(2:T+1,:,:),real_sector_gva(2:T+1,:,:),sector_operating_surplus(2:T+1,:,:),sector_capital_consumption(2:T+1,:,:),nominal_output(2:T+1,:),real_output(2:T+1,:),nominal_sector_output(2:T+1,:,:),real_sector_output(2:T+1,:,:),government_debt(2:T+1,:),government_deficit(2:T+1,:),unemployment_rate(2:T+1,:),euribor(2:T+1),E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g(2:T+1,:,:,:),dyn_bilateral_trade_real_g(2:T+1,:,:,:),capital_stock_dynamics(2:T+1,:,:),capital_loss(2:T+1,:),sector_capital_loss(2:T+1,:,:),firms_damaged(2:T+1,:,:),loan_issuance(2:T+1,:),credit_constrained_pct(2:T+1,:,:),total_firms_demanding(2:T+1,:,:),credit_gap(2:T+1,:),credit_gap_to_gdp(2:T+1,:)]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints,idx_f_i,idx_fg_i,FG_linear,prod_cache);
 
 end

@@ -61,9 +61,11 @@ total_firms_demanding=zeros(T+1,seeds,F,G);
 credit_gap=zeros(T+1,seeds,F);
 credit_gap_to_gdp=zeros(T+1,seeds,F);
 
+cache_const = parallel.pool.Constant(@() build_simulation_cache(year, quarter, scenario, scale, T));
 parfor s=1:seeds
     try
-    [S_nominal_gdp,S_real_gdp,S_nominal_gva,S_real_gva,S_nominal_household_consumption,S_real_household_consumption,S_nominal_government_consumption,S_real_government_consumption,S_nominal_capitalformation,S_real_capitalformation,S_nominal_fixed_capitalformation,S_real_fixed_capitalformation,S_nominal_fixed_capitalformation_dwellings,S_real_fixed_capitalformation_dwellings,S_nominal_exports,S_real_exports,S_nominal_imports,S_real_imports,S_operating_surplus,S_capital_consumption,S_compensation_employees,S_wages,S_taxes_production,S_nominal_sector_gva,S_real_sector_gva,S_sector_operating_surplus,S_sector_capital_consumption,S_nominal_output,S_real_output,S_nominal_sector_output,S_real_sector_output,S_government_debt,S_government_deficit,S_unemployment_rate,S_euribor,S_dyn_bilateral_trade_g,S_dyn_bilateral_trade_real_g,S_capital_stock_dynamics,S_capital_loss,S_sector_capital_loss,S_firms_damaged,S_loan_issuance,S_credit_constrained_pct,S_total_firms_demanding,S_credit_gap,S_credit_gap_to_gdp]=simulate_abm(year,quarter,s,scenario,scale,T,credit_constraints);
+    cache = cache_const.Value;
+    [S_nominal_gdp,S_real_gdp,S_nominal_gva,S_real_gva,S_nominal_household_consumption,S_real_household_consumption,S_nominal_government_consumption,S_real_government_consumption,S_nominal_capitalformation,S_real_capitalformation,S_nominal_fixed_capitalformation,S_real_fixed_capitalformation,S_nominal_fixed_capitalformation_dwellings,S_real_fixed_capitalformation_dwellings,S_nominal_exports,S_real_exports,S_nominal_imports,S_real_imports,S_operating_surplus,S_capital_consumption,S_compensation_employees,S_wages,S_taxes_production,S_nominal_sector_gva,S_real_sector_gva,S_sector_operating_surplus,S_sector_capital_consumption,S_nominal_output,S_real_output,S_nominal_sector_output,S_real_sector_output,S_government_debt,S_government_deficit,S_unemployment_rate,S_euribor,S_dyn_bilateral_trade_g,S_dyn_bilateral_trade_real_g,S_capital_stock_dynamics,S_capital_loss,S_sector_capital_loss,S_firms_damaged,S_loan_issuance,S_credit_constrained_pct,S_total_firms_demanding,S_credit_gap,S_credit_gap_to_gdp]=simulate_abm(year,quarter,s,scenario,scale,T,credit_constraints,cache);
     nominal_gdp(:,s,:)=S_nominal_gdp;
     real_gdp(:,s,:)=S_real_gdp;
     nominal_gva(:,s,:)=S_nominal_gva;
@@ -114,4 +116,5 @@ parfor s=1:seeds
         fprintf('WARNING: Seed %d failed: %s\n', s, ME.message);
     end
 end
+delete(cache_const);
 end

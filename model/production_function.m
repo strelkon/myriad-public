@@ -1,38 +1,31 @@
-function Y_i=production_function(Q_s_i,alpha_bar_i,N_i,kappa_i,K_i,a_sg,beta_i,G_i,F_i,Y_m,G_m)
-%UNTITLED9 Summary of this function goes here
-%   Detailed explanation goes here
+function Y_i=production_function(Q_s_i,alpha_bar_i,N_i,kappa_i,K_i,Y_m,prod_cache)
 
 Y_i_=min(Q_s_i,min(N_i*1.5.*alpha_bar_i,K_i.*kappa_i));
 
-F=size(a_sg,3);
-G=size(a_sg,2);
-fg=1;
-for f=1:F
-    for g=1:G
-        Y_fg_(fg)=sum(Y_i_(G_i==g&F_i==f));
-        A(:,fg)=a_sg(:,g,f)./mean(beta_i(G_i==g&F_i==f));
-        C(g,fg)=1;
-        fg=fg+1;
+num_fg = numel(prod_cache.idx_fg_flat);
+Y_fg_ = zeros(1, num_fg);
+for fg=1:num_fg
+    inds = prod_cache.idx_fg_flat{fg};
+    if ~isempty(inds)
+        Y_fg_(fg)=sum(Y_i_(inds));
     end
 end
-A(isnan(A))=0;
 
-m=zeros(G,1);
-for g=1:G
-    m(g)=sum(Y_m(G_m==g));
+m=zeros(prod_cache.G,1);
+for g=1:prod_cache.G
+    inds = prod_cache.idx_g_m{g};
+    m(g)=sum(Y_m(inds));
 end
 
-Y_fg=computeFeasibleOutput(Y_fg_',A,m,C)';
+Y_fg=computeFeasibleOutput(Y_fg_',prod_cache.A,m,prod_cache.C)';
 
 HC_fg=Y_fg./Y_fg_;
 
 if any(HC_fg<1)
-    fg=1;
-    for f=1:F
-        for g=1:G
-            Y_i(G_i==g&F_i==f)=HC_fg(fg).*Y_i_(G_i==g&F_i==f);
-            fg=fg+1;
-        end
+    Y_i=Y_i_;
+    for fg=1:num_fg
+        inds = prod_cache.idx_fg_flat{fg};
+        Y_i(inds)=HC_fg(fg).*Y_i_(inds);
     end
 else
     Y_i=Y_i_;
@@ -65,14 +58,19 @@ function x = computeFeasibleOutput(x_plan, A, m, C)
 
 % Number of industries and products
 n_i = length(x_plan);   % number of industries
-n_p = size(A, 1);       % number of products (from A)
-% C is assumed to be n_p x n_i.
 
 % Objective: maximize sum(x) is equivalent to minimizing -sum(x)
-f = -ones(n_i, 1);
+persistent f_template Aineq1_template lb_template options_template cached_n_i
+if isempty(cached_n_i) || cached_n_i ~= n_i
+    f_template = -ones(n_i, 1);
+    Aineq1_template = eye(n_i);
+    lb_template = zeros(n_i, 1);
+    options_template = optimoptions('linprog','Display','none');
+    cached_n_i = n_i;
+end
 
-% Constraint 1: Industry outputs do not exceed planned outputs: x <= x_plan.
-Aineq1 = eye(n_i);
+f = f_template;
+Aineq1 = Aineq1_template;
 bineq1 = x_plan;
 
 % Constraint 2: Product-level feasibility:
@@ -88,10 +86,10 @@ Aineq = [Aineq1; Aineq2];
 bineq = [bineq1; bineq2];
 
 % Lower bounds: x >= 0.
-lb = zeros(n_i, 1);
+lb = lb_template;
 
 % Options for linprog (suppress output).
-options = optimoptions('linprog','Display','none');
+options = options_template;
 
 % Solve the linear program.
 [x, ~, exitflag] = linprog(f, Aineq, bineq, [], [], lb, [], options);
@@ -101,4 +99,3 @@ if exitflag ~= 1
 end
 
 end
-
