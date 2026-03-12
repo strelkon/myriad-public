@@ -1,8 +1,14 @@
-function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=simulate_abm(year,quarter,seed,scenario,scale,T,credit_constraints,cache)
+function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=simulate_abm(year,quarter,seed,scenario,scale,T,credit_constraints,cache,output_options)
 rng(seed);
 if nargin < 8 || isempty(cache)
     cache = build_simulation_cache(year, quarter, scenario, scale, T);
 end
+if nargin < 9
+    output_options = [];
+end
+
+output_options = resolve_output_options(output_options);
+include_heavy_diagnostics = output_options.include_heavy_diagnostics;
 
 parameters = cache.parameters;
 initial_conditions = cache.initial_conditions;
@@ -287,15 +293,25 @@ government_deficit=zeros(T+1,F);
 unemployment_rate=zeros(T+1,F);
 euribor=zeros(1,T+1);
 
-dyn_bilateral_trade_g=zeros(T+1,F+1,F+1,G);
-dyn_bilateral_trade_real_g=zeros(T+1,F+1,F+1,G);
-capital_stock_dynamics=zeros(T+1,F,G);
+if include_heavy_diagnostics
+    dyn_bilateral_trade_g=zeros(T+1,F+1,F+1,G);
+    dyn_bilateral_trade_real_g=zeros(T+1,F+1,F+1,G);
+    capital_stock_dynamics=zeros(T+1,F,G);
+    sector_capital_loss=zeros(T+1,F,G);
+    firms_damaged=zeros(T+1,F,G);
+    credit_constrained_pct=zeros(T+1,F,G);
+    total_firms_demanding=zeros(T+1,F,G);
+else
+    dyn_bilateral_trade_g=[];
+    dyn_bilateral_trade_real_g=[];
+    capital_stock_dynamics=[];
+    sector_capital_loss=[];
+    firms_damaged=[];
+    credit_constrained_pct=[];
+    total_firms_demanding=[];
+end
 capital_loss=zeros(T+1,F);
-sector_capital_loss=zeros(T+1,F,G);
-firms_damaged=zeros(T+1,F,G);
 loan_issuance=zeros(T+1,F);
-credit_constrained_pct=zeros(T+1,F,G);
-total_firms_demanding=zeros(T+1,F,G);
 credit_gap=zeros(T+1,F);
 credit_gap_to_gdp=zeros(T+1,F);
 
@@ -396,6 +412,16 @@ for t=1:T
     P_I(T_prime+t)=P_I(T_prime+t-1)*exp(pi_I(T_prime+t));
 end
 
-[nominal_gdp(2:T+1,:),real_gdp(2:T+1,:),nominal_gva(2:T+1,:),real_gva(2:T+1,:),nominal_household_consumption(2:T+1,:),real_household_consumption(2:T+1,:),nominal_government_consumption(2:T+1,:),real_government_consumption(2:T+1,:),nominal_capitalformation(2:T+1,:),real_capitalformation(2:T+1,:),nominal_fixed_capitalformation(2:T+1,:),real_fixed_capitalformation(2:T+1,:),nominal_fixed_capitalformation_dwellings(2:T+1,:),real_fixed_capitalformation_dwellings(2:T+1,:),nominal_exports(2:T+1,:),real_exports(2:T+1,:),nominal_imports(2:T+1,:),real_imports(2:T+1,:),operating_surplus(2:T+1,:),capital_consumption(2:T+1,:),compensation_employees(2:T+1,:),wages(2:T+1,:),taxes_production(2:T+1,:),nominal_sector_gva(2:T+1,:,:),real_sector_gva(2:T+1,:,:),sector_operating_surplus(2:T+1,:,:),sector_capital_consumption(2:T+1,:,:),nominal_output(2:T+1,:),real_output(2:T+1,:),nominal_sector_output(2:T+1,:,:),real_sector_output(2:T+1,:,:),government_debt(2:T+1,:),government_deficit(2:T+1,:),unemployment_rate(2:T+1,:),euribor(2:T+1),E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g(2:T+1,:,:,:),dyn_bilateral_trade_real_g(2:T+1,:,:,:),capital_stock_dynamics(2:T+1,:,:),capital_loss(2:T+1,:),sector_capital_loss(2:T+1,:,:),firms_damaged(2:T+1,:,:),loan_issuance(2:T+1,:),credit_constrained_pct(2:T+1,:,:),total_firms_demanding(2:T+1,:,:),credit_gap(2:T+1,:),credit_gap_to_gdp(2:T+1,:)]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints,idx_f_i,idx_fg_i,FG_linear,prod_cache);
+[nominal_gdp(2:T+1,:),real_gdp(2:T+1,:),nominal_gva(2:T+1,:),real_gva(2:T+1,:),nominal_household_consumption(2:T+1,:),real_household_consumption(2:T+1,:),nominal_government_consumption(2:T+1,:),real_government_consumption(2:T+1,:),nominal_capitalformation(2:T+1,:),real_capitalformation(2:T+1,:),nominal_fixed_capitalformation(2:T+1,:),real_fixed_capitalformation(2:T+1,:),nominal_fixed_capitalformation_dwellings(2:T+1,:),real_fixed_capitalformation_dwellings(2:T+1,:),nominal_exports(2:T+1,:),real_exports(2:T+1,:),nominal_imports(2:T+1,:),real_imports(2:T+1,:),operating_surplus(2:T+1,:),capital_consumption(2:T+1,:),compensation_employees(2:T+1,:),wages(2:T+1,:),taxes_production(2:T+1,:),nominal_sector_gva(2:T+1,:,:),real_sector_gva(2:T+1,:,:),sector_operating_surplus(2:T+1,:,:),sector_capital_consumption(2:T+1,:,:),nominal_output(2:T+1,:),real_output(2:T+1,:),nominal_sector_output(2:T+1,:,:),real_sector_output(2:T+1,:,:),government_debt(2:T+1,:),government_deficit(2:T+1,:),unemployment_rate(2:T+1,:),euribor(2:T+1),E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,S_dyn_bilateral_trade_g,S_dyn_bilateral_trade_real_g,S_capital_stock_dynamics,capital_loss(2:T+1,:),S_sector_capital_loss,S_firms_damaged,loan_issuance(2:T+1,:),S_credit_constrained_pct,S_total_firms_demanding,credit_gap(2:T+1,:),credit_gap_to_gdp(2:T+1,:)]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints,idx_f_i,idx_fg_i,FG_linear,prod_cache,include_heavy_diagnostics);
+
+if include_heavy_diagnostics
+    dyn_bilateral_trade_g(2:T+1,:,:,:)=S_dyn_bilateral_trade_g;
+    dyn_bilateral_trade_real_g(2:T+1,:,:,:)=S_dyn_bilateral_trade_real_g;
+    capital_stock_dynamics(2:T+1,:,:)=S_capital_stock_dynamics;
+    sector_capital_loss(2:T+1,:,:)=S_sector_capital_loss;
+    firms_damaged(2:T+1,:,:)=S_firms_damaged;
+    credit_constrained_pct(2:T+1,:,:)=S_credit_constrained_pct;
+    total_firms_demanding(2:T+1,:,:)=S_total_firms_demanding;
+end
 
 end

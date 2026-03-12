@@ -1,4 +1,4 @@
-function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints,idx_f_i,idx_fg_i,FG_linear,prod_cache)
+function [nominal_gdp,real_gdp,nominal_gva,real_gva,nominal_household_consumption,real_household_consumption,nominal_government_consumption,real_government_consumption,nominal_capitalformation,real_capitalformation,nominal_fixed_capitalformation,real_fixed_capitalformation,nominal_fixed_capitalformation_dwellings,real_fixed_capitalformation_dwellings,nominal_exports,real_exports,nominal_imports,real_imports,operating_surplus,capital_consumption,compensation_employees,wages,taxes_production,nominal_sector_gva,real_sector_gva,sector_operating_surplus,sector_capital_consumption,nominal_output,real_output,nominal_sector_output,real_sector_output,government_debt,government_deficit,unemployment_rate,euribor,E_CB,D_RoW,L_G,D_k,D_i,D_h,E_k,L_i,dyn_bilateral_trade_g,dyn_bilateral_trade_real_g,capital_stock_dynamics,capital_loss,sector_capital_loss,firms_damaged,loan_issuance,credit_constrained_pct,total_firms_demanding,credit_gap,credit_gap_to_gdp]=abm(G,H_act,H_inact,J,L,tau_INC,tau_FIRM,tau_VAT,tau_SIF,tau_SIW,tau_EXPORT,tau_CF,tau_G,theta_UB,psi,psi_H,theta_DIV,theta,mu,r_G,zeta,zeta_LTV,zeta_b,alpha_bar_i,beta_i,kappa_i,delta_i,w_bar_i,tau_Y_i,tau_K_i,b_CF_g,b_CFH_g,b_HH_g,c_G_g,c_E_g,c_I_g,a_sg,G_i,T,T_prime,T_max,P_i,K_i,M_i,S_i,N_i,D_i,L_i,D_h,w_h,K_h,L_G,E_k,E_CB,D_RoW,O_h,sb_inact,sb_other,Y,gamma,pi,P,Y_f,gamma_f,pi_f,P_f,r_bar,C_G,pi_G,P_G,gamma_G,C_E,pi_E,P_E,gamma_E,Y_I,pi_I,P_I,gamma_I,P_bar_g,P_bar_HH,P_bar_CF,Q_d_i,Pi_i,Pi_k,D_k,gamma_K_gr,gamma_X_i,gamma_X_I,F,F_i,F_h,s_a_ffsg,s_CF_ffg,s_CFH_ffg,s_HH_ffg,s_G_ffg,s_E_fg,P_m,Y_m,G_m,scenario,credit_constraints,idx_f_i,idx_fg_i,FG_linear,prod_cache,include_heavy_diagnostics)
 nominal_gdp=zeros(T,F);
 real_gdp=zeros(T,F);
 nominal_gva=zeros(T,F);
@@ -34,18 +34,25 @@ government_debt=zeros(T,F);
 government_deficit=zeros(T,F);
 unemployment_rate=zeros(T,F);
 euribor=zeros(1,T);
-dyn_bilateral_trade=zeros(T,F+1,F+1);
-dyn_bilateral_trade_real=zeros(T,F+1,F+1);
-dyn_bilateral_trade_g=zeros(T,F+1,F+1,G);
-dyn_bilateral_trade_real_g=zeros(T,F+1,F+1,G);
-
-capital_stock_dynamics = zeros(T, F, G);
+if include_heavy_diagnostics
+    dyn_bilateral_trade_g=zeros(T,F+1,F+1,G);
+    dyn_bilateral_trade_real_g=zeros(T,F+1,F+1,G);
+    capital_stock_dynamics = zeros(T, F, G);
+    sector_capital_loss = zeros(T, F, G);
+    firms_damaged = zeros(T, F, G);
+    credit_constrained_pct = zeros(T, F, G);
+    total_firms_demanding = zeros(T, F, G);
+else
+    dyn_bilateral_trade_g = [];
+    dyn_bilateral_trade_real_g = [];
+    capital_stock_dynamics = [];
+    sector_capital_loss = [];
+    firms_damaged = [];
+    credit_constrained_pct = [];
+    total_firms_demanding = [];
+end
 capital_loss = zeros(T, F);
-sector_capital_loss = zeros(T, F, G);
-firms_damaged = zeros(T, F, G);
 loan_issuance = zeros(T, F);
-credit_constrained_pct = zeros(T, F, G);
-total_firms_demanding = zeros(T, F, G);
 credit_gap = zeros(T, F);
 credit_gap_to_gdp = zeros(T, F);
 
@@ -340,14 +347,14 @@ for t=1:T
         gamma_f(T_prime+t,f)=log(sum(Q_d_i(inds_f))/Y_f(T_prime+t-1,f));
     end
     
-    for g=1:G
-        dyn_bilateral_trade_g(t,:,:,g)=bilateral_trade_g(:,:,g);
-        dyn_bilateral_trade_real_g(t,:,:,g)=bilateral_trade_real_g(:,:,g);
+    if include_heavy_diagnostics
+        for g=1:G
+            dyn_bilateral_trade_g(t,:,:,g)=bilateral_trade_g(:,:,g);
+            dyn_bilateral_trade_real_g(t,:,:,g)=bilateral_trade_real_g(:,:,g);
+        end
     end
     bilateral_trade=sum(bilateral_trade_g,3);
     bilateral_trade_real=sum(bilateral_trade_real_g,3);
-    dyn_bilateral_trade(t,:,:)=sum(bilateral_trade_g,3);
-    dyn_bilateral_trade_real(t,:,:)=sum(bilateral_trade_real_g,3);
     D=diag(diag(bilateral_trade));
     nom_imports=sum(bilateral_trade-D,2);
     nom_exports=sum(bilateral_trade-D,1);
@@ -403,19 +410,23 @@ for t=1:T
     end
 
     % Capital dynamics tracking
-    capital_stock_dynamics(t, :, :) = accumarray([F_i(:), G_i(:)], K_i(:), [F, G]);
     capital_loss(t, :) = accumarray(F_i(:), X_i(:), [F, 1]) ./ max(1e-10, accumarray(F_i(:), K_i(:)+X_i(:), [F, 1]));
-    sector_capital_loss(t, :, :) = accumarray([F_i(:), G_i(:)], X_i(:), [F, G]) ./ max(1e-10, accumarray([F_i(:), G_i(:)], K_i(:)+X_i(:), [F, G]));
-    damaged_firms_mask = (X_i ./ max(1e-10, K_i+X_i)) > 0.15;
-    firms_damaged(t, :, :) = accumarray([F_i(:), G_i(:)], damaged_firms_mask(:), [F, G]);
+    if include_heavy_diagnostics
+        capital_stock_dynamics(t, :, :) = accumarray([F_i(:), G_i(:)], K_i(:), [F, G]);
+        sector_capital_loss(t, :, :) = accumarray([F_i(:), G_i(:)], X_i(:), [F, G]) ./ max(1e-10, accumarray([F_i(:), G_i(:)], K_i(:)+X_i(:), [F, G]));
+        damaged_firms_mask = (X_i ./ max(1e-10, K_i+X_i)) > 0.15;
+        firms_damaged(t, :, :) = accumarray([F_i(:), G_i(:)], damaged_firms_mask(:), [F, G]);
+    end
 
     % Credit constraint tracking
     credit_gap(t, :) = accumarray(F_i(:), max(0, DL_d_i(:) - DL_i(:)), [F, 1])';
     credit_gap_to_gdp(t, :) = credit_gap(t, :) ./ max(1e-10, nominal_gdp(t, :));
-    demanding_mask = DL_d_i > 0;
-    constrained_mask = demanding_mask & (DL_i < DL_d_i);
-    total_firms_demanding(t, :, :) = accumarray([F_i(:), G_i(:)], demanding_mask(:), [F, G]);
-    credit_constrained_pct(t, :, :) = accumarray([F_i(:), G_i(:)], constrained_mask(:), [F, G]) ./ max(1, squeeze(total_firms_demanding(t, :, :)));
+    if include_heavy_diagnostics
+        demanding_mask = DL_d_i > 0;
+        constrained_mask = demanding_mask & (DL_i < DL_d_i);
+        total_firms_demanding(t, :, :) = accumarray([F_i(:), G_i(:)], demanding_mask(:), [F, G]);
+        credit_constrained_pct(t, :, :) = accumarray([F_i(:), G_i(:)], constrained_mask(:), [F, G]) ./ max(1, squeeze(total_firms_demanding(t, :, :)));
+    end
 
     euribor(t)=r_bar;
     

@@ -1,6 +1,12 @@
 % Helper function that runs a scenario and saves results on the cluster
 % Called by run_batch via MATLAB batch() submission
-function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constraints)
+function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constraints, output_options)
+
+    if nargin < 8
+        output_options = [];
+    end
+
+    output_options = resolve_output_options(output_options);
 
     fprintf('Starting simulation: %s (scale=1:%d, seeds=%d, T=%d, CC=%d)\n', ...
         scenario, round(1/scale), seeds, T, constraints);
@@ -22,7 +28,7 @@ function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constra
      capital_stock_dynamics, capital_loss, sector_capital_loss, firms_damaged, ...
      loan_issuance, credit_constrained_pct, total_firms_demanding, ...
      credit_gap, credit_gap_to_gdp] = ...
-        simulate_abm_mc(year, quarter, scenario, scale, seeds, T, constraints);
+        simulate_abm_mc(year, quarter, scenario, scale, seeds, T, constraints, output_options);
 
     fprintf('Simulation completed for %s\n', scenario);
 
