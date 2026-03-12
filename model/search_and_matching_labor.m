@@ -10,9 +10,17 @@ for e=1:length(H_E)
     end
 end
 
-H_U=shuffle(find(O_h==0),min(sum(O_h==0),sum(max(0,V_i))));
-I_V=shuffle(repelem(1:length(V_i),max(0,V_i)),min(sum(O_h==0),sum(max(0,V_i))));
-O_h(H_U)=I_V;
-N_i(I_V)=N_i(I_V)+max(0,V_i(I_V));
+vacancies=max(0,V_i);
+total_vacancies=sum(vacancies);
+hires=min(sum(O_h==0),total_vacancies);
+H_U=shuffle(find(O_h==0),hires);
+if hires>0
+    vacancy_positions=randperm(total_vacancies,hires);
+    positive_firms=find(vacancies>0);
+    I_V=positive_firms(discretize(vacancy_positions,[0,cumsum(vacancies(positive_firms))],'IncludedEdge','right'));
+else
+    I_V=zeros(1,0);
 end
-
+O_h(H_U)=I_V;
+N_i(I_V)=N_i(I_V)+vacancies(I_V);
+end
