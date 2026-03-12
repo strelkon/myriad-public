@@ -1,36 +1,51 @@
 function y=sample_intermediate_consumption(F_g,P_f,F_if,I_g,F_i,G_i,s_a_ffs,F,G)
-s_a_ffs=s_a_ffs./histcounts(F_if(F_g),1:F+2)';
-s_a_ffs=s_a_ffs(F_if(F_g),:,:);
+supply_types=F_if(F_g);
+s_a_ffs=s_a_ffs./histcounts(supply_types,1:F+2)';
+s_a_ffs=s_a_ffs(supply_types,:,:);
 s_a_ffs=s_a_ffs+eps;
 
 p=P_f(F_g)';
 gamma=-2;
 p_gamma=p.^gamma;
-y=NaN(1,numel(I_g));
+y=NaN(1,length(I_g));
 
-% Group indices for each unique (f,g) combination in F_i(I_g) and G_i(I_g)
-[groupPairs,~,groupIDs]=unique([F_i(I_g)',G_i(I_g)'],'rows');
+group_ids=G_i(I_g)+G.*(F_i(I_g)-1);
+group_counts=zeros(F*G,1);
+for j=1:length(group_ids)
+    group_counts(group_ids(j))=group_counts(group_ids(j))+1;
+end
 
-% Loop over each group (only groups that occur in I_g)
-for grp=1:size(groupPairs,1)
-    f=groupPairs(grp,1);
-    g=groupPairs(grp,2);
-    
-    % Find indices corresponding to this (f,g)
-    groupIdx=find(groupIDs==grp);
-    k=numel(groupIdx);
-    
-    % Get the corresponding s vector for current f and g
+group_offsets=zeros(F*G,1);
+next_offset=zeros(F*G,1);
+offset=1;
+for gid=1:F*G
+    group_offsets(gid)=offset;
+    next_offset(gid)=offset;
+    offset=offset+group_counts(gid);
+end
+
+group_positions=zeros(1,length(I_g));
+for j=1:length(group_ids)
+    gid=group_ids(j);
+    pos=next_offset(gid);
+    group_positions(pos)=j;
+    next_offset(gid)=pos+1;
+end
+
+active_groups=find(group_counts>0);
+for grp=1:length(active_groups)
+    gid=active_groups(grp);
+    f=floor((gid-1)/G)+1;
+    g=gid-G.*(f-1);
     s=s_a_ffs(:,f,g);
-    
-    if sum(s)>0
-        % Normalize s and compute weights w
-        s=s/sum(s);
+    s_sum=sum(s);
+    if s_sum>0
+        s=s./s_sum;
         w=p_gamma.*s;
-        w=w/sum(w);
-        
-        % Sample and assign values for all indices in this group
-        y(groupIdx)=sample(F_g, k, w);
+        w=w./sum(w);
+        k=group_counts(gid);
+        pos=group_positions(group_offsets(gid):group_offsets(gid)+k-1);
+        y(pos)=sample(F_g,k,w);
     end
 end
 end
