@@ -2,7 +2,9 @@ function cache = build_simulation_cache(year, quarter, scenario, scale, T)
 base_dir = fileparts(mfilename('fullpath'));
 scale_str = ['_', num2str(round(1/scale))];
 
-parameters = load(fullfile(base_dir, 'parameters', [num2str(year), 'Q', num2str(quarter), scale_str, '.mat']), ...
+data_dir = iResolveDataDir(base_dir, year, quarter, scale_str);
+
+parameters = load(fullfile(data_dir, 'parameters', [num2str(year), 'Q', num2str(quarter), scale_str, '.mat']), ...
     'T', 'T_max', 'S', 'G', 'H_act', 'H_inact', 'J', 'L', 'tau_INC', 'tau_FIRM', 'tau_VAT', 'tau_SIF', 'tau_SIW', ...
     'tau_EXPORT', 'tau_CF', 'tau_G', 'theta_UB', 'psi', 'psi_H', 'theta_DIV', 'theta', 'mu', 'r_G', 'zeta', ...
     'zeta_LTV', 'zeta_b', 'I_sr', 'alpha_sr', 'beta_sr', 'kappa_sr', 'delta_sr', 'w_sr', 'tau_Y_sr', 'tau_K_sr', ...
@@ -11,13 +13,13 @@ parameters = load(fullfile(base_dir, 'parameters', [num2str(year), 'Q', num2str(
     'alpha_pi_E', 'beta_pi_E', 'alpha_pi_I', 'beta_pi_I', 'C', 'F', 's_a_ffsg', 's_CF_ffg', 's_CFH_ffg', ...
     's_HH_ffg', 's_G_ffg', 's_E_fg');
 
-initial_conditions = load(fullfile(base_dir, 'initial_conditions', [num2str(year), 'Q', num2str(quarter), scale_str, '.mat']), ...
+initial_conditions = load(fullfile(data_dir, 'initial_conditions', [num2str(year), 'Q', num2str(quarter), scale_str, '.mat']), ...
     'D_H', 'D_I', 'D_RoW', 'E_CB', 'E_k', 'K_H', 'L_G', 'L_I', 'omega', 'sb_inact', 'sb_other', 'w_UB', 'N_sr', ...
     'Y', 'gamma', 'pi', 'P', 'r_bar', 'gamma_G', 'C_G', 'pi_G', 'P_G', 'gamma_E', 'C_E', 'pi_E', 'P_E', 'gamma_I', ...
     'Y_I', 'pi_I', 'P_I', 'Y_f', 'gamma_f', 'pi_f', 'P_f');
 
 if ~strcmp(scenario, 'S0')
-    shock = load(fullfile(base_dir, 'shock', [scenario, '.mat']));
+    shock = load(fullfile(data_dir, 'shock', [scenario, '.mat']));
 else
     shock = struct();
 end
@@ -120,20 +122,23 @@ gamma_X_i = zeros(T, I);
 gamma_X_I = zeros(T, G);
 if ~strcmp(scenario, 'S0')
     if isfield(shock, 'gamma_K_gr')
-        gamma_K_gr = shock.gamma_K_gr;
+        t_shock = min(T, size(shock.gamma_K_gr, 1));
+        gamma_K_gr(1:t_shock, :, :) = shock.gamma_K_gr(1:t_shock, :, :);
     end
     if isfield(shock, 'gamma_X_gr')
+        t_shock = min(T, size(shock.gamma_X_gr, 1));
         for f = 1:F
             for g = 1:G
                 inds = idx_fg_i{f, g};
                 if ~isempty(inds)
-                    gamma_X_i(:, inds) = shock.gamma_X_gr(:, f, g);
+                    gamma_X_i(1:t_shock, inds) = repmat(shock.gamma_X_gr(1:t_shock, f, g), 1, numel(inds));
                 end
             end
         end
     end
     if isfield(shock, 'gamma_X_I')
-        gamma_X_I = shock.gamma_X_I;
+        t_shock = min(T, size(shock.gamma_X_I, 1));
+        gamma_X_I(1:t_shock, :) = shock.gamma_X_I(1:t_shock, :);
     end
 end
 
@@ -170,4 +175,23 @@ cache.prod_cache.C_minus_A = prod_C - prod_A;
 cache.prod_cache.idx_fg_flat = idx_fg_flat;
 cache.prod_cache.idx_g_m = idx_g_m;
 cache.prod_cache.G = G;
+end
+
+function data_dir = iResolveDataDir(base_dir, year, quarter, scale_str)
+filename = [num2str(year), 'Q', num2str(quarter), scale_str, '.mat'];
+local_path = fullfile(base_dir, 'parameters', filename);
+if exist(local_path, 'file')
+    data_dir = base_dir;
+    return;
+end
+
+home_dir = getenv('HOME');
+home_path = fullfile(home_dir, 'parameters', filename);
+if ~isempty(home_dir) && exist(home_path, 'file')
+    data_dir = home_dir;
+    return;
+end
+
+error('build_simulation_cache:MissingDataDir', ...
+    'Could not find %s under %s or %s.', filename, base_dir, home_dir);
 end

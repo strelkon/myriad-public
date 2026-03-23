@@ -10,7 +10,7 @@ if nargin < 3
     seeds = 500;
 end
 if nargin < 4
-    output_options = [];
+    output_options = struct('include_heavy_diagnostics', false);
 end
 
 output_options = resolve_output_options(output_options);

@@ -1,19 +1,17 @@
-% Helper function that runs a scenario and saves results on the cluster
-% Called by run_batch via MATLAB batch() submission
-function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constraints, output_options)
+function run_single_seed_scenario(year, quarter, T, scenario, scale, seed, constraints, output_options)
 
     if nargin < 8
-        output_options = struct( ...
-            'include_heavy_diagnostics', false, ...
-            'log_worker_lifecycle', true);
+        output_options = struct('include_heavy_diagnostics', false);
     end
 
     output_options = resolve_output_options(output_options);
 
-    fprintf('Starting simulation: %s (scale=1:%d, seeds=%d, T=%d, CC=%d)\n', ...
-        scenario, round(1/scale), seeds, T, constraints);
+    fprintf('Starting single-seed simulation: %s (scale=1:%d, seed=%d, T=%d, CC=%d)\n', ...
+        scenario, round(1/scale), seed, T, constraints);
 
-    % Run simulation
+    t_start = tic;
+    cache = build_simulation_cache(year, quarter, scenario, scale, T);
+
     [nominal_gdp, real_gdp, nominal_gva, real_gva, ...
      nominal_household_consumption, real_household_consumption, ...
      nominal_government_consumption, real_government_consumption, ...
@@ -30,17 +28,18 @@ function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constra
      capital_stock_dynamics, capital_loss, sector_capital_loss, firms_damaged, ...
      loan_issuance, credit_constrained_pct, total_firms_demanding, ...
      credit_gap, credit_gap_to_gdp] = ...
-        simulate_abm_mc(year, quarter, scenario, scale, seeds, T, constraints, output_options);
+        simulate_abm(year, quarter, seed, scenario, scale, T, constraints, cache, output_options);
 
-    fprintf('Simulation completed for %s\n', scenario);
+    elapsed_seconds = toc(t_start);
+    fprintf('Single-seed simulation completed in %.6f seconds\n', elapsed_seconds);
 
-    % Save to results/ in the user's home directory (cluster layout)
     results_dir = fullfile(getenv('HOME'), 'results');
     if ~exist(results_dir, 'dir')
         mkdir(results_dir);
     end
-    output_file = fullfile(results_dir, sprintf('%s_%dQ%d_%d.mat', ...
-        scenario, year, quarter, round(1/scale)));
+
+    output_file = fullfile(results_dir, sprintf('%s_%dQ%d_%d_seed%d_single.mat', ...
+        scenario, year, quarter, round(1/scale), seed));
 
     save(output_file, ...
         'nominal_gdp', 'real_gdp', 'nominal_gva', 'real_gva', ...
@@ -58,7 +57,8 @@ function run_and_save_scenario(year, quarter, T, scenario, scale, seeds, constra
         'dyn_bilateral_trade_g', 'dyn_bilateral_trade_real_g', ...
         'capital_stock_dynamics', 'capital_loss', 'sector_capital_loss', ...
         'firms_damaged', 'loan_issuance', 'credit_constrained_pct', ...
-        'total_firms_demanding', 'credit_gap', 'credit_gap_to_gdp');
+        'total_firms_demanding', 'credit_gap', 'credit_gap_to_gdp', ...
+        'elapsed_seconds');
 
     fprintf('Results saved to: %s\n', output_file);
 end

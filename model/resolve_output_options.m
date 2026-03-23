@@ -12,4 +12,10 @@ if ~isfield(output_options, 'include_heavy_diagnostics') || isempty(output_optio
 else
     output_options.include_heavy_diagnostics = logical(output_options.include_heavy_diagnostics);
 end
+
+if ~isfield(output_options, 'log_worker_lifecycle') || isempty(output_options.log_worker_lifecycle)
+    output_options.log_worker_lifecycle = false;
+else
+    output_options.log_worker_lifecycle = logical(output_options.log_worker_lifecycle);
+end
 end

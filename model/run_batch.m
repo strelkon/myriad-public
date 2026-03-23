@@ -1,9 +1,10 @@
-function run_batch(scale, T, seeds, workers)
+function run_batch(scale, T, seeds, workers, output_options)
 % run_batch - Submit batch jobs for all shock scenarios to HPC cluster
-%   scale:   firm scale ratio (e.g., 1/100 for 1:100) (default: 1/10000)
+%   scale:   firm scale ratio (e.g., 1/100 for 1:100) (default: 1/1000)
 %   T:       number of quarters to simulate (default: 12)
-%   seeds:   number of Monte Carlo seeds (default: 300)
+%   seeds:   number of Monte Carlo seeds (default: 500)
 %   workers: number of parallel workers per job (default: 32)
+%   output_options: output selection options (default: light diagnostics)
 %
 % All scenarios are submitted simultaneously for parallel execution
 % on the cluster. Each job uses a pool of 'workers' CPUs to run
@@ -13,27 +14,34 @@ function run_batch(scale, T, seeds, workers)
 %   S0 = Baseline (no shock)
 %   S1 = Single Flood
 
-if nargin < 1, scale = 1/10000; end
+if nargin < 1, scale = 1/1000; end
 if nargin < 2, T = 12; end
-if nargin < 3, seeds = 300; end
+if nargin < 3, seeds = 500; end
 if nargin < 4, workers = 32; end
+if nargin < 5
+    output_options = struct( ...
+        'include_heavy_diagnostics', false, ...
+        'log_worker_lifecycle', true);
+end
 
-% Define scenarios to run (scenario name, credit constraints)
-% Credit constraints: 0=none, 1=mild, 2=strict
+output_options = resolve_output_options(output_options);
+
+year = 2023;
+quarter = 4;
+
+% Match run_abm defaults: baseline and single-flood, no credit constraints.
 scenarios = {
     'S0', 0;
     'S1', 0;
-    'S2', 0;
-    'S3', 0;
-    % Add credit constraint variants as needed:
-    % 'S1', 1;
-    % 'S1', 2;
 };
 
 % Initialize cluster connection
 c = parcluster('UniCC production SFTP -  R2025b');
 c.AdditionalProperties.Partition = 'generic';
-c.AdditionalProperties.MemPerCPU = '30gb';
+c.AdditionalProperties.MemPerCPU = '2gb';
+c.AdditionalProperties.AdditionalSubmitArgs = iAppendSubmitArg( ...
+    c.AdditionalProperties.AdditionalSubmitArgs, ...
+    '--output=%x_%j_main.log');
 
 % Pre-allocate job arrays
 num_scenarios = size(scenarios, 1);
@@ -51,7 +59,7 @@ for i = 1:num_scenarios
     job_names{i} = sprintf('%s_C%d', scenario, constraints);
 
     jobs{i} = batch(c, 'run_and_save_scenario', 0, ...
-        {2023, 4, T, scenario, scale, seeds, constraints}, ...
+        {year, quarter, T, scenario, scale, seeds, constraints, output_options}, ...
         'Pool', workers, 'CurrentFolder', '.');
 
     fprintf('  [%d/%d] Submitted: %s\n', i, num_scenarios, job_names{i});
@@ -84,7 +92,11 @@ fprintf('\nAll jobs finished in %.1f minutes (%.1f seconds).\n', ...
 % Report any failures
 failed_jobs = {};
 for i = 1:num_scenarios
-    if ~strcmp(jobs{i}.State, 'finished')
+    task_error = [];
+    if ~isempty(jobs{i}.Tasks)
+        task_error = jobs{i}.Tasks(1).Error;
+    end
+    if ~strcmp(jobs{i}.State, 'finished') || ~isempty(task_error)
         failed_jobs{end+1} = job_names{i}; %#ok<AGROW>
     end
 end
@@ -96,5 +108,19 @@ if ~isempty(failed_jobs)
     end
 else
     fprintf('\nAll scenarios completed successfully!\n');
+end
+end
+
+function submit_args = iAppendSubmitArg(existing_args, new_arg)
+if isempty(existing_args)
+    submit_args = new_arg;
+    return;
+end
+
+existing_args = strtrim(char(existing_args));
+if contains(existing_args, new_arg)
+    submit_args = existing_args;
+else
+    submit_args = strtrim([existing_args, ' ', new_arg]);
 end
 end
