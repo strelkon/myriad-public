@@ -70,3 +70,8 @@ Heavy diagnostics are disabled by default in the current local and cluster wrapp
 - Large-scale runs can become memory-bandwidth-bound before they become CPU-bound.
 - See `docs/devops_script_map.md` for the runtime layout.
 
+## License
+
+The code in this repository is available under the BSD 3-Clause License. See `LICENSE`.
+
+Bundled data files, calibration inputs, and derived artifacts may incorporate third-party statistical sources and should be checked against their upstream terms before redistribution outside this repository context.
