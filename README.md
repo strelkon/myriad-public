@@ -70,14 +70,3 @@ Heavy diagnostics are disabled by default in the current local and cluster wrapp
 - Large-scale runs can become memory-bandwidth-bound before they become CPU-bound.
 - See `docs/devops_script_map.md` for the runtime layout.
 
-## Development Workflow
-
-- Read `AGENTS.md` before making nontrivial changes.
-- Use small local smoke tests before longer cluster submissions.
-- Do not commit generated results, copied cluster logs, or profiling artifacts.
-- Keep maintainer-facing documentation in sync with changes to run paths or output locations.
-
-## Open Source Status
-
-This repository is public and documented for maintainer workflows, but it does not yet include an explicit project license. If you intend to reuse or redistribute the code or bundled data, coordinate with the maintainers before relying on any implied permissions.
-
