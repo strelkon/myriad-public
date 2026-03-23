@@ -1,0 +1,25 @@
+.DS_Store
+
+# MATLAB editor and autosave artifacts
+*.asv
+*.m~
+slprj/
+
+# Local Python environment
+.venv/
+
+# Generated simulation outputs and diagnostics
+results/*.mat
+results/cluster_check/
+results/profile_*.mat
+results/*_main.log
+results/worker_logs/
+
+# Local analysis and profiling scratch files
+profile_*.mat
+Job*.log
+Task*.diary.txt
+
+# MATLAB cluster and desktop scratch state
+.matlab/
+
