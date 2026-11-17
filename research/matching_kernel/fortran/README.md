@@ -162,3 +162,69 @@ Raw results are retained under `post_tools/full_baseline_fortran_20261117` on
 the cluster and `output/full_baseline_fortran_20261117/results` in the Macro MIP
 workspace. Model-source and kernel checksums matched before/after the runs.
 The production MEX remained unchanged; only the isolated research version ran.
+
+## Paired macroMIP shock comparison
+
+`compare_macromip.m` compares the original archived macroMIP matching binary
+with the Fortran binary, holding the entire archived macroMIP model fixed.
+The selected experiment is `macro_mip_1-p-4`, 2017Q4 calibration, scale 1:1000,
+12 quarters and seeds 1-10. It also compares each fresh output against the same
+seed in the archived 100-member scenario. It does not compare a ten-member mean
+against the original hundred-member mean.
+
+Copy the driver to a fresh experiment directory with `original/` and `fortran/`
+subdirectories, each containing the appropriate `search_and_matching.mexa64`.
+Review the archived-model and result-file paths in the driver. Submit through
+the licensed MATLAB profile with Pool=10, AutoAttachFiles=false, the experiment
+directory as CurrentFolder and AdditionalPaths, 8 GiB per CPU and two hours.
+The initial job ran on one node. No archived input, model or output is modified.
+
+The driver alternates implementation order across odd/even seeds, asserts
+which model and kernel are selected, and checks all returned fields with
+`isequaln`. It saves per-output mismatch counts and maximum finite absolute
+differences, per-seed outputs, and both post-run RNG states. Timings exclude
+the common cache build and output saving. GDP must be finite and no simulated
+quarter may be all zero. Disabled diagnostics are compared as empty fields.
+Archive files have no saved post-run RNG, so RNG equality is checked between
+the two fresh implementations. Exactness still uses MATLAB's `isequaln`
+convention for NaNs and signed zeros.
+
+### Completed macroMIP comparison (17 November 2026)
+
+The persistent Pair 1 shock (`macro_mip_1-p-4`), 2017Q4 calibration, scale 1:1000,
+12 quarters and seeds 1-10 passed every comparison on cluster node `compute1`.
+The rest of the model was held at the archived macroMIP commit
+`a1674cd18467068af3bfddc53ca5acea9e9f6ddc`; only the matching binary changed.
+
+- All 46 returned fields matched per seed: 39 populated outputs and seven empty,
+  disabled diagnostic fields. There were 460 array comparisons, including 390
+  populated arrays containing 1,365,650 numerical values in total.
+- Fresh original and Fortran outputs were identical under `isequaln`, with zero
+  differing elements, zero maximum finite absolute difference and zero nonfinite
+  mismatches. This covers GDP, gross output, GVA, consumption, investment, trade,
+  government and financial variables, including the returned sectoral arrays.
+- Both implementations reproduced the same ten seed members in the archived
+  100-member macroMIP result file exactly. No comparison of unmatched ensemble
+  means was used.
+- All ten final RNG-state structures matched between the fresh original and
+  Fortran runs. The archive did not contain post-run RNG states.
+- All twenty fresh simulations had finite nominal/real GDP and no all-zero
+  simulated quarter. The source, calibration, shock, archive and binary checksums
+  remained unchanged during the experiment.
+
+Mean simulation time was 528.969501 seconds for the original and 145.695464
+seconds for Fortran: 3.6307x speedup, or 72.46% less time. These full-simulation
+measurements exclude the common cache build and saving. Order was alternated
+across seeds, with ten workers on the same shared node. This comparison includes
+all accumulated matching improvements relative to the archived original; it is
+not an estimate of the Fortran language contribution alone. The paired job ran
+both implementations for every seed and completed with Slurm exit 0, job 3233216,
+in 12m 45s including startup and shutdown.
+
+Raw seed outputs, RNG states and per-variable comparison records are retained
+under `post_tools/macromip_fortran_compare_20261117` on the cluster and
+`output/macromip_fortran_compare_20261117/results` in the Macro MIP workspace.
+The local `variable_comparisons.csv` contains all 460 field comparisons.
+This validates the selected shock, ten seeds and twelve-quarter horizon; it is
+not an exhaustive regression of every macroMIP scenario or seed. Production
+binaries and archived results were not replaced.

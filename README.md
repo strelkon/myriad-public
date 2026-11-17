@@ -83,3 +83,6 @@ optimisations and reproducibility constraints. Production model files are unchan
 
 The isolated Fortran research directory also includes a full-baseline timing
 driver for ten seeds at scales 1:1000 and 1:100; see its reproduction instructions.
+
+The matching research directory also includes a paired macroMIP shock comparison
+against the archived per-seed results; see its Fortran README for the setup.
