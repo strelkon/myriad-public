@@ -127,3 +127,8 @@ flowchart TD
 - `simulate_abm_mc.m` is the place to inspect if jobs return zero-filled arrays, because seed failures happen there.
 - `generate_simulate_abm*.m` exists, but the top-level codegen path has been experimental and not the main production route.
 - `run.sh` appears to be a legacy helper and is not the main current batch path.
+
+## Isolated matching-kernel research
+
+See [the research checkpoint](../research/matching_kernel/README.md).
+Generate and patch the experimental kernel there; production model files are unchanged.

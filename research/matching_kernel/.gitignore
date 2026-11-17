@@ -1,0 +1,11 @@
+codegen/
+*.mexa64
+*.mexmaca64
+*.o
+*.mod
+*.so
+*.dylib
+*.mat
+build/
+results/
+__pycache__/

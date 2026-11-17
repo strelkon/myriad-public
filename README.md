@@ -75,3 +75,8 @@ Heavy diagnostics are disabled by default in the current local and cluster wrapp
 The code in this repository is available under the BSD 3-Clause License. See `LICENSE`.
 
 Bundled data files, calibration inputs, and derived artifacts may incorporate third-party statistical sources and should be checked against their upstream terms before redistribution outside this repository context.
+
+## Isolated matching-kernel research
+
+See [the research checkpoint](research/matching_kernel/README.md) for the saved
+optimisations and reproducibility constraints. Production model files are unchanged.

@@ -1,0 +1,18 @@
+int32_T b_bsearch(const emxArray_real_T *x, real_T xi)
+{
+  const real_T *data = x->data;
+  int32_T low = 1;
+  int32_T high = x->size[1];
+  /* For valid nonnegative array sizes, this midpoint is exactly the same
+     integer as floor(low/2)+floor(high/2)+(both odd). The comparisons,
+     search path, duplicate-edge handling and result are unchanged. */
+  while (high - low > 1) {
+    int32_T mid = low + ((high - low) >> 1);
+    if (xi >= data[mid - 1]) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
