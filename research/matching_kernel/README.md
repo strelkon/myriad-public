@@ -59,6 +59,8 @@ self-contained research sources and documentation.
 ## Fortran research implementation
 
 The [Fortran implementation and reproduction instructions](fortran/README.md)
-retain the MATLAB interface and RNG service. Twelve small cluster comparisons
-passed with identical outputs and RNG states; production-scale and simulation
-validation are in progress. This branch does not replace the production MEX.
+retain the MATLAB interface and RNG service. All 12 small comparisons, eight
+production calls and two short simulation comparisons passed with identical
+outputs and RNG states. The conservative observed matching-time reduction is
+about 25-30% versus the optimized C checkpoint; see the detailed timing table
+and variability caveat. This branch does not replace the production MEX.
