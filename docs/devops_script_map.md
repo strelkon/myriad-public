@@ -132,3 +132,7 @@ flowchart TD
 
 See [the research checkpoint](../research/matching_kernel/README.md).
 Generate and patch the experimental kernel there; production model files are unchanged.
+
+The research-only Fortran build and comparison driver is
+`research/matching_kernel/fortran/test_fortran.m`; prepare a separate experiment
+directory with `fortran/prepare.py` as described in its README.

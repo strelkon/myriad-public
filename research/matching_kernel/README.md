@@ -55,3 +55,10 @@ production deployment.
 Source checkpoint: local development commit `d047246`, based on `213b62e`.
 This public branch retains the public repository history and adds only the
 self-contained research sources and documentation.
+
+## Fortran research implementation
+
+The [Fortran implementation and reproduction instructions](fortran/README.md)
+retain the MATLAB interface and RNG service. Twelve small cluster comparisons
+passed with identical outputs and RNG states; production-scale and simulation
+validation are in progress. This branch does not replace the production MEX.
