@@ -136,3 +136,7 @@ Generate and patch the experimental kernel there; production model files are unc
 The research-only Fortran build and comparison driver is
 `research/matching_kernel/fortran/test_fortran.m`; prepare a separate experiment
 directory with `fortran/prepare.py` as described in its README.
+
+`research/matching_kernel/fortran/run_full_baseline.m` runs ten S0 seeds with
+a ten-worker pool and records full-simulation and batch timings at a specified
+scale. It uses a separate experiment directory and the isolated Fortran MEX.

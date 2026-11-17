@@ -80,3 +80,6 @@ Bundled data files, calibration inputs, and derived artifacts may incorporate th
 
 See [the research checkpoint](research/matching_kernel/README.md) for the saved
 optimisations and reproducibility constraints. Production model files are unchanged.
+
+The isolated Fortran research directory also includes a full-baseline timing
+driver for ten seeds at scales 1:1000 and 1:100; see its reproduction instructions.

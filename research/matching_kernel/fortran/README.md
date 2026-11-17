@@ -103,3 +103,27 @@ cluster, with local copies under `output/matching_fortran_20261117/results` in
 the Macro MIP workspace. Neither generated sources, fixtures, binaries nor raw
 cluster logs are committed. Broader scenario/horizon regression and deployment
 integration remain prerequisites for using this prototype in production.
+
+## Full baseline runtime experiment
+
+`run_full_baseline(denominator)` runs S0, 2023Q4 calibration, seeds 1-10,
+12 quarters, no credit constraints, and the isolated Fortran MEX. Copy the
+driver into a separate cluster experiment directory and submit twice through
+the licensed MATLAB profile, passing 1000 and 100 respectively. Each submission
+uses Pool=10 (ten simulation workers plus one coordinator), AutoAttachFiles=false,
+and the experiment directory as CurrentFolder and AdditionalPaths. The initial
+run requested 4 GiB per CPU at 1:1000 and 16 GiB per CPU at 1:100, with a four-hour
+limit. Review the kernel, model and support paths in the driver before reuse.
+
+Each seed starts with an empty cache, so simulation timing includes calibration
+loading and model initialization. All simulation outputs and final RNG states
+are saved per seed; GDP ensembles and their means are saved after all ten finish.
+The default lightweight output configuration is used (`include_heavy_diagnostics=false`,
+with its default selected diagnostics retained), and reviewer matching is disabled.
+
+Per-seed simulation seconds exclude saving; a second timer includes saving.
+Batch seconds cover the driver's parallel workload and ensemble save, excluding
+scheduler queueing and pool startup. Slurm accounting supplies allocation
+elapsed time separately. Results must have finite GDP and twelve nonzero
+simulated quarters. This is a full-run timing/validity test, not an additional
+Fortran-versus-C trajectory comparison. Raw results remain outside Git.
