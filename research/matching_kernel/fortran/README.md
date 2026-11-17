@@ -127,3 +127,38 @@ scheduler queueing and pool startup. Slurm accounting supplies allocation
 elapsed time separately. Results must have finite GDP and twelve nonzero
 simulated quarters. This is a full-run timing/validity test, not an additional
 Fortran-versus-C trajectory comparison. Raw results remain outside Git.
+
+### Completed full-baseline measurements (17 November 2026)
+
+Both cluster batches completed successfully on `compute4`: S0 baseline, 2023Q4
+calibration, seeds 1-10, 12 quarters, isolated Fortran implementation, ten
+simulation workers plus one coordinator per batch. Both jobs began immediately,
+with no scheduler wait in this experiment. The jobs shared the node and overlapped
+for the first minute of the larger-scale run.
+
+| Scale | Mean per seed | Per-seed range | Ten-seed workload | Full cluster allocation |
+| --- | --- | --- | --- | --- |
+| 1:1000 | 2m 01s | 1m 54s-2m 06s | 2m 08s | 2m 38s |
+| 1:100 | 38m 22s | 36m 02s-39m 39s | 39m 41s | 40m 11s |
+
+Per-seed times include loading, initialization and all twelve quarters, but
+exclude writing the seed output file. Ten-seed workload time includes output
+saving and ensemble construction. Full cluster allocation time also includes
+worker startup and shutdown; it excludes queueing. These are ten concurrent
+seeds, not ten serial runs. A practical planning estimate at these settings is
+about three minutes at 1:1000 and forty minutes at 1:100, plus any future queue
+wait. Different node load, worker counts, horizons and scenarios can change this.
+
+Exact mean seed times were 121.0345025 and 2302.2529707 seconds; workload times
+were 127.652266 and 2380.608092 seconds. Slurm jobs 3233083 and 3233084 completed
+with exit code 0 and allocation elapsed times of 158 and 2411 seconds, respectively.
+Every seed produced finite nominal and real GDP, a 13-by-26 GDP array (initial
+state plus twelve quarters), and no all-zero simulated quarter. All 20 seed
+output files, final RNG states, two GDP ensembles and timing records were saved.
+These are validity and runtime checks; no new full-length C/Fortran trajectory
+comparison was performed for these batches.
+
+Raw results are retained under `post_tools/full_baseline_fortran_20261117` on
+the cluster and `output/full_baseline_fortran_20261117/results` in the Macro MIP
+workspace. Model-source and kernel checksums matched before/after the runs.
+The production MEX remained unchanged; only the isolated research version ran.
