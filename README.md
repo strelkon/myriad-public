@@ -86,3 +86,6 @@ driver for ten seeds at scales 1:1000 and 1:100; see its reproduction instructio
 
 The matching research directory also includes a paired macroMIP shock comparison
 against the archived per-seed results; see its Fortran README for the setup.
+
+A one-quarter 1:10 memory pilot is available in the Fortran research directory;
+its driver uses one independent 32-GiB cluster job per seed.

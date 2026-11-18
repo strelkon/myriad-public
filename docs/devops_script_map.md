@@ -143,3 +143,7 @@ scale. It uses a separate experiment directory and the isolated Fortran MEX.
 
 `research/matching_kernel/fortran/compare_macromip.m` performs paired full-horizon
 original/Fortran macroMIP shock comparisons and checks archived per-seed outputs.
+
+`research/matching_kernel/fortran/run_scale10_seed.m` runs one 1:10 baseline seed
+for one quarter and records runtime, output validity and process memory peaks.
+Submit each seed separately with one CPU and 32 GiB RAM.

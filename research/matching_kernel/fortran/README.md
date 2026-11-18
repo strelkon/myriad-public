@@ -228,3 +228,26 @@ The local `variable_comparisons.csv` contains all 460 field comparisons.
 This validates the selected shock, ten seeds and twelve-quarter horizon; it is
 not an exhaustive regression of every macroMIP scenario or seed. Production
 binaries and archived results were not replaced.
+
+## Scale 1:10 memory pilot
+
+`run_scale10_seed(seed)` runs S0 with 2023Q4 calibration, scale 1:10, one
+simulated quarter and the isolated Fortran matching binary. Submit seeds 1-10
+as separate licensed MATLAB batch jobs, each with Pool=0, one CPU, 32 GiB RAM
+and a four-hour wall-time limit. Use a fresh experiment directory as
+CurrentFolder and AdditionalPaths, AutoAttachFiles=false, and upload the driver
+first. Review its model, support and kernel paths before reuse.
+
+Separate jobs provide a distinct memory allocation and Slurm memory record for
+each seed. The driver also records Linux `/proc/self/status` VmHWM (resident
+memory high-water mark) for the MATLAB process, explicitly labelled in KiB.
+VmPeak is virtual memory and must not be interpreted as physical RAM used.
+One computational thread is used. Timing includes loading, initialization and
+one quarter; saving has a separate timer. The usual lightweight diagnostics
+are retained, reviewer matching and credit constraints are disabled, and all
+outputs plus the final RNG state are saved. GDP must be finite, have the
+expected 2-by-26 shape and contain a nonzero simulated quarter.
+
+The pilot measures actual peak memory at 1:10; it does not establish the peak
+for a longer horizon or every scenario. Raw outputs and accounting records
+remain outside Git. The production model is not changed.
