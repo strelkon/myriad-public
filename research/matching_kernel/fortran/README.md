@@ -251,3 +251,51 @@ expected 2-by-26 shape and contain a nonzero simulated quarter.
 The pilot measures actual peak memory at 1:10; it does not establish the peak
 for a longer horizon or every scenario. Raw outputs and accounting records
 remain outside Git. The production model is not changed.
+
+### Completed 1:10 pilot (18 November 2026)
+
+All ten S0 seeds completed one simulated quarter at scale 1:10 using the Fortran
+kernel, 2023Q4 calibration and the lightweight diagnostic configuration. Each
+seed ran as a separate one-CPU cluster job with a verified 32-GiB allocation.
+All ten ran on the shared `compute5` node and exited successfully (Slurm jobs
+3234556-3234565, exit code 0). Model, calibration and kernel checksums were
+unchanged during the runs. No local model simulation was performed.
+
+| Measurement | Observed result |
+| --- | --- |
+| Mean simulation time per seed | 1h 54m 05s |
+| Simulation-time range | 1h 43m 31s-2h 00m 40s |
+| Entire ten-job span, including startup/shutdown | 2h 01m 24s |
+| MATLAB process peak resident memory range | 10.16-10.26 GiB |
+| Highest Slurm-recorded job memory peak | 10.34 GiB |
+| Allocated RAM per seed | 32 GiB |
+
+Simulation times include loading, initialization and one simulated quarter;
+they exclude output saving and worker startup/shutdown. The cohort span runs
+from the first job start to the last job end. Individual queue waits were 0-3
+seconds. This is a ten-job concurrent workload, and the timing reflects the
+shared-node conditions during this experiment.
+
+Process memory uses Linux VmHWM, converted from KiB to GiB by dividing by
+1,048,576. Slurm MaxRSS is reported separately because it has a different scope
+and sampling method. VmPeak is virtual memory and is not the RAM requirement.
+The largest recorded peak across these measurements was 10.336 GiB, leaving
+substantial headroom within the requested 32 GiB. The earlier tenfold-memory
+extrapolation was conservative; this pilot provides direct per-seed evidence.
+These observations apply to one quarter with these diagnostic settings, not
+an established maximum for every scenario or a full twelve-quarter horizon.
+
+All ten seeds returned finite nominal and real GDP, a nonzero simulated quarter,
+and the expected 2-by-26 GDP arrays. Full output cells and final RNG states were
+saved per seed. This was a runtime/memory/validity pilot, not a new original-C
+versus-Fortran numerical equivalence comparison at 1:10.
+
+`collect_scale10.m` combines the ten completed members, their RNG states,
+output-variable names, GDP arrays and ensemble means into `ensemble.mat`.
+Run this collector only after all ten seed-completion files exist. It can use
+a separate small cluster job; its aggregation time is excluded above.
+
+Raw results are retained under `post_tools/scale10_quarter_20261118` on the
+cluster and `output/scale10_quarter_20261118/results` in the Macro MIP workspace.
+The local `seed_timings_memory.csv` and `summary.json` contain per-seed figures.
+Production model files and binaries were not replaced.

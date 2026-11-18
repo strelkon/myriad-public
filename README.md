@@ -89,3 +89,6 @@ against the archived per-seed results; see its Fortran README for the setup.
 
 A one-quarter 1:10 memory pilot is available in the Fortran research directory;
 its driver uses one independent 32-GiB cluster job per seed.
+
+The 1:10 pilot results and ensemble collector are documented in the Fortran
+research README, including measured per-seed physical memory peaks.
