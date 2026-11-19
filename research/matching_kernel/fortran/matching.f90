@@ -72,31 +72,38 @@ end function
 subroutine shuffle_ids(ids)
  integer(c_int),intent(inout)::ids(:)
  real(c_double),allocatable::u(:)
- integer(c_int),allocatable::order(:),work(:),copy(:)
- integer(c_int64_t),allocatable::keys(:)
- integer::n,j,k,shift,bucket,counts(0:255),offset(0:255),running
+ integer(c_int64_t),allocatable::keys(:),destination(:),temp(:)
+ integer(c_int),allocatable::values(:),next_values(:),temp_values(:)
+ integer::n,j,shift,bucket,counts(0:255),offset(0:255),running,slot
  n=size(ids);if(n==0)return
- allocate(u(n),keys(n),order(n),work(n),copy(n))
+ allocate(u(n))
  call uniform_f(u,int(n,c_int))
- do j=1,n
-  keys(j)=transfer(u(j),keys(j));order(j)=j
- end do
- ! Uniform values are nonnegative finite doubles. Stable byte passes preserve ties.
+ keys=transfer(u,0_c_int64_t,n)
+ deallocate(u)
+ allocate(destination(n),next_values(n))
+ values=ids
  do shift=0,56,8
   counts=0
   do j=1,n
-   bucket=int(iand(shiftr(keys(order(j)),shift),255_c_int64_t));counts(bucket)=counts(bucket)+1
+   bucket=int(ibits(keys(j),shift,8));counts(bucket)=counts(bucket)+1
   end do
   if(maxval(counts)==n)cycle
   running=1
-  do k=0,255;offset(k)=running;running=running+counts(k);end do
-  do j=1,n
-   bucket=int(iand(shiftr(keys(order(j)),shift),255_c_int64_t));work(offset(bucket))=order(j);offset(bucket)=offset(bucket)+1
+  do bucket=0,255
+   offset(bucket)=running;running=running+counts(bucket)
   end do
-  order=work
+  do j=1,n
+   bucket=int(ibits(keys(j),shift,8));slot=offset(bucket)
+   destination(slot)=keys(j);next_values(slot)=values(j);offset(bucket)=slot+1
+  end do
+  call move_alloc(keys,temp)
+  call move_alloc(destination,keys)
+  call move_alloc(temp,destination)
+  call move_alloc(values,temp_values)
+  call move_alloc(next_values,values)
+  call move_alloc(temp_values,next_values)
  end do
- copy=ids
- do j=1,n;ids(j)=copy(order(j));end do
+ ids=values
 end subroutine
 subroutine weighted_sample(suppliers,weights,k,draws)
  integer(c_int),intent(in)::suppliers(:)

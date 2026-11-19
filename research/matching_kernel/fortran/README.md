@@ -6,6 +6,45 @@ It preserves the 30-input / 16-output MATLAB interface for the fixed 26-country,
 62-sector model. This is an isolated research implementation, not a production
 replacement or a general-purpose library.
 
+## Reuse the revised standard macroMIP shuffle on the IIASA cluster
+
+For Linux MATLAB R2025b jobs, the tested binary is already on shared storage.
+In each seed worker, after setting up the standard model path and before calling
+`simulate_abm`, select it as follows. Use absolute paths for simulation outputs
+and restore the worker's previous directory when the seed function returns.
+
+```matlab
+kernel = '/home/strelkon/post_tools/scale10_profile_a/candidate';
+previousFolder = pwd;
+restoreFolder = onCleanup(@() cd(previousFolder));
+cd(kernel);
+clear search_and_matching
+assert(strcmp(which('search_and_matching'), ...
+    fullfile(kernel, 'search_and_matching.mexa64')));
+% Run the usual simulate_abm call here, with the usual seed and inputs.
+```
+
+Run this block inside the seed function on each worker. Keep the kernel as the
+current directory during simulation so that the model's bundled MEX cannot take
+precedence. To verify the installed file, run the following on the cluster:
+
+```sh
+sha256sum /home/strelkon/post_tools/scale10_profile_a/candidate/search_and_matching.mexa64
+```
+
+Expected SHA-256: `1b366bd39247cdcbbc5ec9a295b7517b0dcfb7503bcbee615f0a8788914e37e7`.
+To rebuild from this checkout, follow **Reproduce on the cluster** below and
+set `kernel` to the resulting experiment's absolute `candidate` directory.
+
+The revised shuffle carries buyer IDs alongside their random keys in each
+stable radix pass. On the same node with ten concurrent S0 seeds (2023Q4,
+1:10, one simulated quarter), mean simulation time per seed fell from 2 h 15 min
+34 s to 1 h 38 min 2 s relative to the previous Fortran shuffle. All 47 saved
+output fields and the final MATLAB RNG state matched for each seed. The earlier
+2017Q4 macroMIP comparisons and 17 November timings below used the previous
+Fortran shuffle. The ECOLEC paper implementation has separate instructions in
+[ecolec](ecolec/README.md).
+
 ## Exactness design
 
 - MATLAB still supplies uniform random numbers through `emlrtRandu`; Fortran does
