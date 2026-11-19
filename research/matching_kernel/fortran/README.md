@@ -299,3 +299,5 @@ Raw results are retained under `post_tools/scale10_quarter_20261118` on the
 cluster and `output/scale10_quarter_20261118/results` in the Macro MIP workspace.
 The local `seed_timings_memory.csv` and `summary.json` contain per-seed figures.
 Production model files and binaries were not replaced.
+
+For paper simulations using reviewer matching and reconstruction accounting, see the [ECOLEC revised shuffle](ecolec/README.md).
